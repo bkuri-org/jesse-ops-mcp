@@ -1,0 +1,22 @@
+name: Push Notification
+
+on:
+  push:
+    branches-ignore: [main, master]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  notify:
+    if: github.event.head_commit != null
+    uses: bkuri-org/.github/.github/workflows/notify-push.yml@main
+    with:
+      repo: ${{ github.repository }}
+      branch: ${{ github.ref_name }}
+      sha: ${{ github.sha }}
+      author: ${{ github.actor }}
+      commit_message: ${{ github.event.head_commit.message }}
+      compare_url: ${{ github.event.compare }}
+    secrets:
+      github_token: ${{ secrets.GITHUB_TOKEN }}
