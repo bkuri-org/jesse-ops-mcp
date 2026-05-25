@@ -1,8 +1,8 @@
 """
-Phase 7: Strategy Creation & Management Tools
+Strategy Job Management, Rate Limiting & Caching Tools
 
-Iterative strategy refinement (Ralph Wiggum Loop) with async job support,
-strategy metadata, cache management, and rate limiting.
+Async job tracking for strategy creation, rate limiter status,
+and cache management utilities.
 """
 
 import logging
@@ -10,15 +10,11 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from jesse_mcp.core.strategy_validation.metadata import (
-    CERTIFICATION_MIN_TESTS,
-    CERTIFICATION_PASS_RATE,
     get_or_create_metadata,
-    load_metadata,
     save_metadata,
 )
 from jesse_mcp.tools._utils import (
     get_strategies_path,
-    require_jesse,
     tool_error_handler,
 )
 
@@ -141,110 +137,6 @@ def _strategy_create_impl(
 def register_strategy_tools(mcp):
     """Register strategy creation and management tools with the MCP server."""
 
-    @mcp.tool(name="strategy_create")
-    @tool_error_handler
-    def strategy_create(
-        name: str,
-        description: str,
-        indicators: Optional[List[str]] = None,
-        strategy_type: str = "trend_following",
-        risk_per_trade: float = 0.02,
-        timeframe: str = "1h",
-        max_iterations: int = 5,
-        overwrite: bool = False,
-        async_mode: bool = False,
-        skip_backtest: bool = False,
-    ) -> Dict[str, Any]:
-        """
-        Create strategy with iterative refinement (Ralph Wiggum loop).
-
-        If async_mode=True, creates a Job and returns job_id immediately.
-        Otherwise runs synchronously with progress logging.
-
-        Args:
-            name: Strategy name (used as class name)
-            description: Human-readable description of the strategy
-            indicators: List of technical indicators to use (optional)
-            strategy_type: Type classification (default: trend_following)
-            risk_per_trade: Risk percentage per trade (default: 0.02 = 2%)
-            timeframe: Primary trading timeframe (default: 1h)
-            max_iterations: Maximum refinement iterations (default: 5)
-            overwrite: Overwrite existing strategy (default: False)
-            async_mode: Run asynchronously (default: False)
-            skip_backtest: Skip dry-run backtest validation (default: False)
-
-        Returns:
-            Dict with status, name, iterations, validation_history, path, code, ready_for_backtest
-        """
-        if not async_mode:
-            return _strategy_create_impl(
-                name=name,
-                description=description,
-                indicators=indicators,
-                strategy_type=strategy_type,
-                risk_per_trade=risk_per_trade,
-                timeframe=timeframe,
-                max_iterations=max_iterations,
-                overwrite=overwrite,
-                skip_backtest=skip_backtest,
-            )
-
-        import threading
-
-        from jesse_mcp.core.job_manager import get_job_manager
-
-        job_manager = get_job_manager()
-        job = job_manager.create_job(
-            "strategy_create",
-            {
-                "name": name,
-                "description": description,
-                "indicators": indicators,
-                "strategy_type": strategy_type,
-                "risk_per_trade": risk_per_trade,
-                "timeframe": timeframe,
-                "max_iterations": max_iterations,
-                "overwrite": overwrite,
-                "skip_backtest": skip_backtest,
-            },
-        )
-        job_id = job.id
-
-        def run_async():
-            def progress_callback(pct: float, step: str, iteration: int):
-                job_manager.update_progress(
-                    job_id,
-                    progress_percent=pct * 100,
-                    current_step=step,
-                    iterations_completed=iteration,
-                    iterations_total=max_iterations,
-                )
-
-            try:
-                result = _strategy_create_impl(
-                    name=name,
-                    description=description,
-                    indicators=indicators,
-                    strategy_type=strategy_type,
-                    risk_per_trade=risk_per_trade,
-                    timeframe=timeframe,
-                    max_iterations=max_iterations,
-                    overwrite=overwrite,
-                    skip_backtest=skip_backtest,
-                    progress_callback=progress_callback,
-                )
-                if "error" in result and result.get("status") == "failed":
-                    job_manager.fail_job(job_id, result["error"])
-                else:
-                    job_manager.complete_job(job_id, result)
-            except Exception as e:
-                job_manager.fail_job(job_id, str(e))
-
-        thread = threading.Thread(target=run_async, daemon=True)
-        thread.start()
-
-        return {"job_id": job_id, "status": "started", "async_mode": True}
-
     @mcp.tool(name="strategy_create_status")
     @tool_error_handler
     def strategy_create_status(job_id: str) -> Dict[str, Any]:
@@ -313,129 +205,6 @@ def register_strategy_tools(mcp):
                 "reason": "Job not found or already complete",
             }
 
-    @mcp.tool(name="strategy_refine")
-    @tool_error_handler
-    def strategy_refine(
-        name: str,
-        feedback: str,
-        focus_area: str = "general",
-        max_iterations: int = 3,
-    ) -> Dict[str, Any]:
-        """
-        Refine existing strategy based on feedback.
-
-        Reads strategy, refines based on feedback, re-validates.
-
-        Args:
-            name: Strategy name to refine
-            feedback: Feedback/issues to address
-            focus_area: Area to focus refinement (default: general)
-            max_iterations: Maximum refinement iterations (default: 3)
-
-        Returns:
-            Dict with status, name, iterations, changes
-        """
-        import os
-
-        from jesse_mcp.core.strategy_builder import get_strategy_builder
-        from jesse_mcp.core.strategy_validator import get_validator
-
-        strategies_path = get_strategies_path()
-
-        strategy_dir = os.path.join(strategies_path, name)
-        strategy_file = os.path.join(strategy_dir, "__init__.py")
-
-        if not os.path.exists(strategy_file):
-            return {
-                "error": f"Strategy '{name}' not found",
-                "status": "failed",
-                "name": name,
-            }
-
-        with open(strategy_file, "r") as f:
-            current_code = f.read()
-
-        validator = get_validator()
-        builder = get_strategy_builder(validator)
-
-        spec = {
-            "name": name,
-            "description": f"Refined: {feedback}",
-            "strategy_type": focus_area,
-        }
-
-        changes = []
-        for iteration in range(max_iterations):
-            logger.info(f"Refinement iteration {iteration + 1}/{max_iterations}")
-
-            validation_result = validator.full_validation(current_code, spec)
-            changes.append(
-                {
-                    "iteration": iteration + 1,
-                    "validation_passed": validation_result.get("passed", False),
-                    "errors": validation_result.get("errors", [])[:3],
-                }
-            )
-
-            if validation_result.get("passed", False):
-                break
-
-            current_code = builder.refine_from_validation(
-                current_code, validation_result
-            )
-
-        with open(strategy_file, "w") as f:
-            f.write(current_code)
-
-        logger.info(f"✅ Strategy refined: {strategy_file}")
-
-        return {
-            "status": "refined",
-            "name": name,
-            "iterations": len(changes),
-            "changes": changes,
-            "path": strategy_file,
-        }
-
-    @mcp.tool(name="strategy_delete")
-    @tool_error_handler
-    def strategy_delete(name: str, confirm: bool = False) -> Dict[str, Any]:
-        """
-        Delete a strategy.
-
-        Args:
-            name: Strategy name to delete
-            confirm: Must be True to actually delete (default: False)
-
-        Returns:
-            Dict with status, name
-        """
-        import os
-        import shutil
-
-        if not confirm:
-            return {
-                "status": "confirmation_required",
-                "name": name,
-                "message": "Set confirm=True to delete the strategy",
-            }
-
-        strategies_path = get_strategies_path()
-
-        strategy_dir = os.path.join(strategies_path, name)
-
-        if not os.path.exists(strategy_dir):
-            return {
-                "error": f"Strategy '{name}' not found",
-                "status": "not_found",
-                "name": name,
-            }
-
-        shutil.rmtree(strategy_dir)
-        logger.info(f"✅ Strategy deleted: {strategy_dir}")
-
-        return {"status": "deleted", "name": name}
-
     @mcp.tool(name="jobs_list")
     @tool_error_handler
     def jobs_list(job_type: Optional[str] = None, limit: int = 50) -> Dict[str, Any]:
@@ -470,52 +239,6 @@ def register_strategy_tools(mcp):
             ],
             "count": len(jobs),
         }
-
-    @mcp.tool(name="strategy_metadata")
-    @tool_error_handler
-    def strategy_metadata(name: str) -> Dict[str, Any]:
-        """
-        Get metadata and version info for a strategy.
-
-        Args:
-            name: Strategy name
-
-        Returns:
-            Dict with strategy metadata including version, test_count, test_pass_count,
-            certified status, and certification thresholds
-        """
-        import os
-
-        strategies_path = get_strategies_path()
-
-        strategy_dir = os.path.join(strategies_path, name)
-        if not os.path.exists(strategy_dir):
-            return {
-                "error": f"Strategy '{name}' not found",
-                "status": "not_found",
-                "name": name,
-            }
-
-        metadata = load_metadata(name, strategies_path)
-        if metadata is None:
-            return {
-                "error": f"Metadata not found for strategy '{name}'",
-                "status": "not_found",
-                "name": name,
-            }
-
-        result = metadata.to_dict()
-        result["certification_requirements"] = {
-            "min_tests": CERTIFICATION_MIN_TESTS,
-            "pass_rate": CERTIFICATION_PASS_RATE,
-            "current_pass_rate": (
-                metadata.test_pass_count / metadata.test_count
-                if metadata.test_count > 0
-                else 0
-            ),
-        }
-        result["status"] = "found"
-        return result
 
     @mcp.tool(name="rate_limit_status")
     @tool_error_handler
