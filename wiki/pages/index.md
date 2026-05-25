@@ -1,0 +1,26 @@
+# Memory Index
+
+- [note-024] FASTMCP_REFACTORING_PRD — fastmcp_refactoring_prd
+- [note-023] REFACTORING_STRATEGY — refactoring_strategy
+- [note-022] PROJECT_SUMMARY — project_summary
+- [note-021] PROJECT_FINAL_REPORT — project_final_report
+- [note-020] PROJECT_STATUS — project_status
+- [note-019] IMPLEMENTATION_PLAN — implementation_plan
+- [note-018] CONVERSATIONAL_PIPELINE_SPEC — conversational_pipeline_spec
+- [note-017] PHASE1_STATUS — phase1_status
+- [note-016] PHASE2_ROADMAP — phase2_roadmap
+- [note-015] PHASE2_COMPLETE — phase2_complete
+- [note-014] PHASE3_COMPLETE — phase3_complete
+- [note-013] PHASE4_PLAN — phase4_plan
+- [note-012] PHASE5_PLAN — phase5_plan
+- [note-011] PRD_v1.0.0 — prd_v1.0.0
+- [note-010] PRD — prd
+- [note-009] README — readme
+- [note-008] AGENTS — agents
+- [note-007] AUTHENTICATION_DISCOVERY — authentication_discovery
+- [note-006] JESSE_API_CONFIGURATION — jesse_api_configuration
+- [note-005] COMPREHENSIVE_TRADING_SYSTEM_DESIGN — comprehensive_trading_system_design
+- [note-004] AGENT_SYSTEM — agent_system
+- [note-003] USING_WITH_LLMS — using_with_llms
+- [note-002] README — readme
+- [note-001] AGENTS — agents

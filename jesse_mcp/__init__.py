@@ -1,16 +1,15 @@
 """
-Jesse MCP Server
+Jesse Ops MCP Server
 
-An MCP (Model Context Protocol) server providing 46 quantitative trading tools:
-- Phase 1: Backtesting and strategy validation
-- Phase 3: Optimization tools for strategy parameter tuning
-- Phase 4: Risk analysis tools for portfolio and trade risk assessment
-- Phase 5: Pairs trading tools for statistical arbitrage and regime analysis
-- Phase 6: Live trading with paper/live mode support and safety mechanisms
-- Strategy Creation: Ralph Wiggum Loop for autonomous strategy generation with progress tracking
+Operational MCP server complementing Jesse's built-in strategy-dev MCP.
+Focuses on live trading, risk analysis, optimization execution, pairs trading,
+and monitoring — everything the official Jesse MCP doesn't cover.
+
+Requires Jesse v2.1.4+ with its built-in MCP server for strategy development
+(backtest CRUD, candle import, strategy read/write, config, indicators).
 """
 
-__version__ = "1.2.0"
+__version__ = "2.0.0"
 __author__ = "Bernardo Kuri"
 __all__ = ["main"]
 

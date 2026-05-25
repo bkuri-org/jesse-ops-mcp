@@ -1,7 +1,15 @@
-# Jesse Ops MCP Development Guidelines
+---
+id: note-008
+tags: [agents]
+created: 2026-05-10T09:32:32.689606+00:00
+source: AGENTS.md
+---
 
-Operational MCP server complementing Jesse's built-in strategy-dev MCP (v2.1.4+).
-Focuses on live trading, risk analysis, optimization, pairs trading, and monitoring.
+# AGENTS
+
+# Jesse MCP Development Guidelines
+
+MCP server exposing Jesse's algorithmic trading framework to LLM agents. 46 tools across 6 phases.
 
 ## External References
 
@@ -164,3 +172,4 @@ bd close <id>         # Complete work
 - NEVER say "ready to push when you are" - YOU must push
 - If push fails, resolve and retry until it succeeds
 <!-- END BEADS INTEGRATION -->
+

@@ -1,0 +1,27 @@
+# Ingest Log
+
+- [note-001] AGENTS — _AGENTS.md_
+- [note-002] README — _README.md_
+- [2026-05-10] CURATE: discovered 29 untracked project doc(s)
+- [note-003] USING_WITH_LLMS — _docs/USING_WITH_LLMS.md_
+- [note-004] AGENT_SYSTEM — _docs/AGENT_SYSTEM.md_
+- [note-005] COMPREHENSIVE_TRADING_SYSTEM_DESIGN — _docs/COMPREHENSIVE_TRADING_SYSTEM_DESIGN.md_
+- [note-006] JESSE_API_CONFIGURATION — _docs/JESSE_API_CONFIGURATION.md_
+- [note-007] AUTHENTICATION_DISCOVERY — _docs/AUTHENTICATION_DISCOVERY.md_
+- [note-008] AGENTS — _AGENTS.md_
+- [note-009] README — _README.md_
+- [note-010] PRD — _docs/archive/PRD.md_
+- [note-011] PRD_v1.0.0 — _docs/archive/PRD_v1.0.0.md_
+- [note-012] PHASE5_PLAN — _docs/archive/PHASE5_PLAN.md_
+- [note-013] PHASE4_PLAN — _docs/archive/PHASE4_PLAN.md_
+- [note-014] PHASE3_COMPLETE — _docs/archive/PHASE3_COMPLETE.md_
+- [note-015] PHASE2_COMPLETE — _docs/archive/PHASE2_COMPLETE.md_
+- [note-016] PHASE2_ROADMAP — _docs/archive/PHASE2_ROADMAP.md_
+- [note-017] PHASE1_STATUS — _docs/archive/PHASE1_STATUS.md_
+- [note-018] CONVERSATIONAL_PIPELINE_SPEC — _docs/archive/CONVERSATIONAL_PIPELINE_SPEC.md_
+- [note-019] IMPLEMENTATION_PLAN — _docs/archive/IMPLEMENTATION_PLAN.md_
+- [note-020] PROJECT_STATUS — _docs/archive/PROJECT_STATUS.md_
+- [note-021] PROJECT_FINAL_REPORT — _docs/archive/PROJECT_FINAL_REPORT.md_
+- [note-022] PROJECT_SUMMARY — _docs/archive/PROJECT_SUMMARY.md_
+- [note-023] REFACTORING_STRATEGY — _docs/archive/REFACTORING_STRATEGY.md_
+- [note-024] FASTMCP_REFACTORING_PRD — _docs/archive/FASTMCP_REFACTORING_PRD.md_
