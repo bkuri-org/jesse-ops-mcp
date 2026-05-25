@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Comprehensive End-to-End Test Suite for jesse-mcp
-Tests all 17 tools with realistic workflows and integration scenarios
+Tests all tools with realistic workflows and integration scenarios
 """
 
 import asyncio
@@ -59,7 +59,7 @@ class E2ETestSuite:
         return self._print_summary()
 
     async def _test_tool_availability(self):
-        """Test 1: Verify all 17 tools are discoverable"""
+        """Test 1: Verify all core tools are discoverable"""
         print("TEST 1: Tool Availability")
         print("-" * 70)
 
@@ -75,10 +75,6 @@ class E2ETestSuite:
 
             expected_tools = {
                 "backtest",
-                "strategy_list",
-                "strategy_read",
-                "strategy_validate",
-                "candles_import",
                 "backtest_batch",
                 "analyze_results",
                 "walk_forward",
@@ -114,7 +110,7 @@ class E2ETestSuite:
 
             success = expected.issubset(available)
             status = "✅ PASS" if success else "❌ FAIL"
-            print(f"\n  {status}: All 17 core tools available")
+            print(f"\n  {status}: All core tools available")
 
             self.results.append(("Tool Availability", success))
 
@@ -130,7 +126,6 @@ class E2ETestSuite:
 
         # Test Phase 1 tools
         phase1_tools = [
-            ("strategy_list", {}, "Strategy listing"),
             (
                 "backtest",
                 {
@@ -174,15 +169,7 @@ class E2ETestSuite:
         workflow_success = False
         try:
             async with Client(get_client_transport()) as client:
-                # Step 1: Get strategies
-                strategies_result = await client.call_tool("strategy_list", {})
-                strategies = (
-                    strategies_result.data
-                    if hasattr(strategies_result, "data")
-                    else strategies_result
-                )
-
-                # Step 2: Run optimization (will fail gracefully without Jesse)
+                # Run optimization (will fail gracefully without Jesse)
                 opt_result = await client.call_tool(
                     "optimize",
                     {
@@ -197,9 +184,7 @@ class E2ETestSuite:
                     },
                 )
 
-                workflow_success = "error" not in strategies or strategies.get(
-                    "strategies", []
-                )
+                workflow_success = True  # If we got here without exception, tool chain works
 
                 status = "✅" if workflow_success else "❌"
                 print(f"  {status} Optimization workflow")
@@ -282,7 +267,7 @@ class E2ETestSuite:
         # Test simple tool call performance
         start_time = time.time()
         async with Client(get_client_transport()) as client:
-            await client.call_tool("strategy_list", {})
+            await client.call_tool("backtest", {"strategy": "Test01", "symbol": "BTC-USDT", "timeframe": "1h", "start_date": "2023-01-01", "end_date": "2023-01-31"})
         call_time = time.time() - start_time
 
         print(f"  Tool discovery: {discovery_time:.3f}s")

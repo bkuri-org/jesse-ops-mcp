@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
 """
-Jesse MCP Server - FastMCP Implementation
+Jesse Ops MCP Server - FastMCP Implementation
 
-Provides 51 tools for quantitative trading analysis:
-- Phase 1: Backtesting (5 tools)
-- Phase 3: Optimization (4 tools)
-- Phase 4: Risk Analysis (4 tools)
-- Phase 5: Pairs Trading (5 tools)
-- Phase 6: Live Trading (12 tools)
-- Strategy Creation (6 tools) - Ralph Wiggum Loop with progress tracking
-- Community (5 tools) - jesse.trade community strategy browsing & comparison
+Operational MCP server complementing Jesse's built-in strategy-dev MCP.
+Provides 49 core tools + 23 agent orchestration tools:
+
+Core tools (49):
+- Backtesting (4): backtest, backtest_cancel, active_workers, backtest_benchmark
+- Strategy Job Mgmt (6): create_status, create_cancel, jobs_list, rate_limit_status, cache_stats, cache_clear
+- Optimization (6): optimize, optimization_cancel, monte_carlo_cancel, walk_forward, backtest_batch, analyze_results
+- Risk Analysis (7): monte_carlo, native_monte_carlo, var_calculation, stress_test, risk_report, plot_significance_test, rule_significance_test
+- Pairs Trading (4): correlation_matrix, pairs_backtest, factor_analysis, regime_detector
+- Live Trading (17): session management, order execution, position monitoring
+- Community (5): jesse.trade strategy browsing & comparison
+
+Agent orchestration (23, optional):
+- Automated trading workflows, monitoring, and agent coordination
 
 Tools are registered from modular files in jesse_mcp/tools/:
 - backtesting.py, strategy.py, optimization.py, risk.py, pairs.py, live.py
@@ -25,7 +31,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("jesse-mcp")
+logger = logging.getLogger("jesse-ops-mcp")
 
 # ==================== LAZY INITIALIZATION ====================
 
@@ -109,7 +115,7 @@ def _initialize_dependencies():
 
 # ==================== FASTMCP INITIALIZATION ====================
 
-mcp = FastMCP("jesse-mcp", version="1.0.0")
+mcp = FastMCP("jesse-ops-mcp", version="2.0.0")
 
 
 @mcp.custom_route("/health", methods=["GET"])
@@ -131,8 +137,8 @@ async def health_endpoint(request: Request) -> JSONResponse:
     return JSONResponse(
         {
             "status": "healthy",
-            "mcp_server": "jesse-mcp",
-            "version": importlib.metadata.version("jesse-mcp"),
+            "mcp_server": "jesse-ops-mcp",
+            "version": importlib.metadata.version("jesse-ops-mcp"),
             "jesse": jesse_status,
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
