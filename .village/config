@@ -1,0 +1,9 @@
+[DEFAULT]
+LLM_MODEL=z-ai-glm-5-turbo
+LLM_PROVIDER=venice
+
+[llm]
+model = z-ai-glm-5-turbo
+provider = venice
+max_tokens = 2000
+temperature = 0.7

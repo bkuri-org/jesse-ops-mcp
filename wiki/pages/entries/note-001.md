@@ -1,7 +1,15 @@
-# Jesse Ops MCP Development Guidelines
+---
+id: note-001
+tags: [agents]
+created: 2026-05-10T08:13:44.740437+00:00
+source: AGENTS.md
+---
 
-Operational MCP server complementing Jesse's built-in strategy-dev MCP (v2.1.4+).
-Focuses on live trading, risk analysis, optimization, pairs trading, and monitoring.
+# AGENTS
+
+# Jesse MCP Development Guidelines
+
+MCP server exposing Jesse's algorithmic trading framework to LLM agents. 46 tools across 6 phases.
 
 ## External References
 
@@ -26,7 +34,7 @@ python -m jesse_mcp --transport http --port 8000  # Run server (HTTP)
 - **Types**: Use `typing` module (`Dict[str, Any]`, `Optional[T]`, etc.)
 - **Naming**: `PascalCase` classes, `snake_case` functions, `UPPER_SNAKE_CASE` constants
 - **Errors**: Return `{"error": str(e), "error_type": type(e).__name__}` from tools
-- **Logging**: `logger = logging.getLogger("jesse-mcp.phase3")`, emoji prefixes (✅❌⚠️)
+- **Logging**: `logger = logging.getLogger("jesse-ops-mcp.phase3")`, emoji prefixes (✅❌⚠️)
 
 ## Jesse REST API Gotchas
 
@@ -164,3 +172,4 @@ bd close <id>         # Complete work
 - NEVER say "ready to push when you are" - YOU must push
 - If push fails, resolve and retry until it succeeds
 <!-- END BEADS INTEGRATION -->
+
