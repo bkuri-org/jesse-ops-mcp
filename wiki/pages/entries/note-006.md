@@ -7,15 +7,15 @@ source: docs/JESSE_API_CONFIGURATION.md
 
 # JESSE_API_CONFIGURATION
 
-# Jesse MCP API Configuration Guide
+# Jesse Ops MCP API Configuration Guide
 
 ## Overview
 
-The jesse-mcp server connects to the Jesse trading platform via its REST API running on **server2**. Configuration is done through the MetaMCP web panel, not through files.
+The jesse-ops-mcp server connects to the Jesse trading platform via its REST API running on **server2**. Configuration is done through the MetaMCP web panel, not through files.
 
 ## Required Environment Variables
 
-Configure these in the MetaMCP MCP Servers panel for jesse-mcp:
+Configure these in the MetaMCP MCP Servers panel for jesse-ops-mcp:
 
 ### 1. `JESSE_URL`
 - **Description**: Base URL of the Jesse API
@@ -49,7 +49,7 @@ Configure these in the MetaMCP MCP Servers panel for jesse-mcp:
 
 1. Open MetaMCP panel: https://metamcp.kuri.casa
 2. Navigate to "MCP Servers"
-3. Find "jesse-mcp" in the list
+3. Find "jesse-ops-mcp" in the list
 4. Edit the environment variables:
    - Set `JESSE_URL=http://server2:8000`
    - Choose authentication method:
@@ -60,13 +60,13 @@ Configure these in the MetaMCP MCP Servers panel for jesse-mcp:
 **Example Configuration (Method A - Password)**:
 ```
 JESSE_URL=http://server2:8000
-JESSE_PASSWORD=jessesecurepassword2025
+JESSE_PASSWORD=<your_jesse_ui_password>
 ```
 
 **Example Configuration (Method B - API Token)**:
 ```
 JESSE_URL=http://server2:8000
-JESSE_API_TOKEN=abc123xyz789...
+JESSE_API_TOKEN=<your_api_token>
 ```
 
 The client will automatically:
@@ -76,7 +76,7 @@ The client will automatically:
 
 ## Verifying Configuration
 
-Once configured in MetaMCP, the jesse-mcp client will automatically:
+Once configured in MetaMCP, the jesse-ops-mcp client will automatically:
 1. Authenticate with Jesse using the PASSWORD
 2. Obtain a session token
 3. Use that token for all API operations
@@ -87,7 +87,7 @@ To manually test the authentication:
 # Step 1: Login to get an auth token
 AUTH_TOKEN=$(curl -s -X POST http://server2:8000/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"password": "jessesecurepassword2025"}' | jq -r '.auth_token')
+  -d '{"password": "<your_jesse_password>"}' | jq -r '.auth_token')
 
 # Step 2: Use the auth token in API calls (note lowercase 'authorization')
 curl -s -X POST http://server2:8000/backtest \
@@ -104,15 +104,15 @@ Jesse uses a two-step authentication process:
 
 Example:
 ```
-authorization: c8f16e7c14bd480cd46982b58595c478ea099ec617fd813bd234133d9796b4a3
+authorization: <your_auth_token>
 ```
 
 ## Current Status
 
 - Jesse service running on server2: ✅
 - API endpoint accessible: ✅
-- Authentication: ✅ (Working with correct PASSWORD)
-- jesse-mcp REST client: ✅ (Automatically handles login and token management)
+- Authentication: ✅ (Working with valid credentials)
+- jesse-ops-mcp REST client: ✅ (Automatically handles login and token management)
 
 ## Troubleshooting
 
@@ -120,7 +120,7 @@ authorization: c8f16e7c14bd480cd46982b58595c478ea099ec617fd813bd234133d9796b4a3
 **If using JESSE_PASSWORD**:
 1. Verify the password is correct (same as Jesse UI login password)
 2. Check that the password doesn't have special characters that need escaping
-3. Restart the jesse-mcp container after changing the password
+3. Restart the jesse-ops-mcp container after changing the password
 
 **If using JESSE_API_TOKEN**:
 1. Verify the token is correctly generated in Jesse UI (Settings → API Tokens)
@@ -131,7 +131,7 @@ authorization: c8f16e7c14bd480cd46982b58595c478ea099ec617fd813bd234133d9796b4a3
 ### "No JESSE_PASSWORD or JESSE_API_TOKEN provided" warnings
 1. Ensure at least ONE of JESSE_PASSWORD or JESSE_API_TOKEN is set in MetaMCP
 2. Check MetaMCP environment variables are saved correctly
-3. Restart the jesse-mcp container
+3. Restart the jesse-ops-mcp container
 
 ### Connection errors
 1. Verify Jesse service is running: `ssh server2 "sudo systemctl status jesse.service"`
@@ -145,6 +145,5 @@ authorization: c8f16e7c14bd480cd46982b58595c478ea099ec617fd813bd234133d9796b4a3
 3. Navigate to: Settings/Admin → API Tokens
 4. Click "Generate New Token"
 5. Copy the full token value
-6. Set `JESSE_API_TOKEN=<copied_token>` in MetaMCP jesse-mcp environment
+6. Set `JESSE_API_TOKEN=<copied_token>` in MetaMCP jesse-ops-mcp environment
 7. Restart the container
-

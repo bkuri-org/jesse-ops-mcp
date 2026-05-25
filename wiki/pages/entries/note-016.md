@@ -10,7 +10,7 @@ source: docs/archive/PHASE2_ROADMAP.md
 # Jesse MCP - Phase 2 Implementation Roadmap
 
 **Status**: Ready to begin  
-**Location**: `~/source/jesse-mcp/`  
+**Location**: `~/source/jesse-ops-mcp/`  
 **Git History**: 3 commits with full history
 
 ## Phase 2: Real Jesse Integration

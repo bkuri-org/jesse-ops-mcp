@@ -34,7 +34,7 @@ python -m jesse_mcp --transport http --port 8000  # Run server (HTTP)
 - **Types**: Use `typing` module (`Dict[str, Any]`, `Optional[T]`, etc.)
 - **Naming**: `PascalCase` classes, `snake_case` functions, `UPPER_SNAKE_CASE` constants
 - **Errors**: Return `{"error": str(e), "error_type": type(e).__name__}` from tools
-- **Logging**: `logger = logging.getLogger("jesse-mcp.phase3")`, emoji prefixes (✅❌⚠️)
+- **Logging**: `logger = logging.getLogger("jesse-ops-mcp.phase3")`, emoji prefixes (✅❌⚠️)
 
 ## Jesse REST API Gotchas
 

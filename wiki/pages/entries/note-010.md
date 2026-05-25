@@ -9,7 +9,7 @@ source: docs/archive/PRD.md
 
 # Jesse MCP Server - Product Requirements Document
 
-**Project Name**: `jesse-mcp`
+**Project Name**: `jesse-ops-mcp`
 
 ## Executive Summary
 
@@ -142,7 +142,7 @@ Current algorithmic trading strategy development is:
 │                            server1                                       │
 │                                                                          │
 │  ┌─────────────────────┐    ┌─────────────────────┐                     │
-│  │  jesse-mcp-server   │    │   jesse-ntfy        │                     │
+│  │  jesse-ops-mcp-server   │    │   jesse-ntfy        │                     │
 │  │  (new container)    │◄──►│   (existing)        │                     │
 │  │                     │    │                     │                     │
 │  │  Port: 3100 (stdio) │    │  Port: 9000 (GUI)   │                     │
@@ -1258,7 +1258,7 @@ LIMITS = {
 
 ```json
 {
-  "name": "jesse-mcp",
+  "name": "jesse-ops-mcp",
   "version": "1.0.0",
   "description": "Jesse algorithmic trading framework MCP server",
   
@@ -1290,9 +1290,9 @@ LIMITS = {
 ```json
 {
   "mcpServers": {
-    "jesse-mcp": {
+    "jesse-ops-mcp": {
       "command": "python",
-      "args": ["/srv/containers/jesse-mcp/server.py"],
+      "args": ["/srv/containers/jesse-ops-mcp/server.py"],
       "env": {
         "JESSE_PROJECT_PATH": "/srv/containers/jesse"
       }

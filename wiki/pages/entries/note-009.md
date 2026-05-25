@@ -9,7 +9,7 @@ source: README.md
 
 # Jesse MCP Server
 
-[![PyPI version](https://badge.fury.io/py/jesse-mcp.svg)](https://badge.fury.io/py/jesse-mcp)
+[![PyPI version](https://badge.fury.io/py/jesse-ops-mcp.svg)](https://badge.fury.io/py/jesse-ops-mcp)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -24,28 +24,28 @@ All planned features implemented and tested. 32 tools available (17 core + 15 ag
 ### PyPI
 
 ```bash
-pip install jesse-mcp
+pip install jesse-ops-mcp
 ```
 
 ### uvx (recommended for running directly)
 
 ```bash
-uvx jesse-mcp
+uvx jesse-ops-mcp
 ```
 
 ### Arch Linux (AUR)
 
 ```bash
-yay -S jesse-mcp
+yay -S jesse-ops-mcp
 # or
-paru -S jesse-mcp
+paru -S jesse-ops-mcp
 ```
 
 ### From Source
 
 ```bash
-git clone https://github.com/bkuri/jesse-mcp.git
-cd jesse-mcp
+git clone https://github.com/bkuri-org/jesse-ops-mcp.git
+cd jesse-ops-mcp
 pip install -e .
 ```
 
@@ -53,13 +53,13 @@ pip install -e .
 
 ```bash
 # stdio transport (default, for MCP clients)
-jesse-mcp
+jesse-ops-mcp
 
 # HTTP transport (for remote access)
-jesse-mcp --transport http --port 8100
+jesse-ops-mcp --transport http --port 8100
 
 # Show help
-jesse-mcp --help
+jesse-ops-mcp --help
 ```
 
 ### Environment Variables
@@ -85,7 +85,7 @@ jesse-mcp --help
 ## Architecture
 
 ```
-LLM Agent ←→ MCP Protocol ←→ jesse-mcp ←→ Jesse REST API (localhost:9000)
+LLM Agent ←→ MCP Protocol ←→ jesse-ops-mcp ←→ Jesse REST API (localhost:9000)
                                     ↓
                             Mock Fallbacks (when Jesse unavailable)
 ```
@@ -169,7 +169,7 @@ Browse, compare, and inspect community strategies from jesse.trade:
 
 ```bash
 # Install dev dependencies
-pip install jesse-mcp[dev]
+pip install jesse-ops-mcp[dev]
 
 # Run all tests
 pytest -v
@@ -215,7 +215,7 @@ Add to `~/.config/opencode/opencode.json`:
 ```json
 {
   "mcp": {
-    "jesse-mcp-dev": {
+    "jesse-ops-mcp-dev": {
       "type": "remote",
       "url": "http://localhost:8100/mcp",
       "enabled": true

@@ -130,7 +130,7 @@ def read_strategy(name):
 ### Testing Results
 
 ```
-🚀 Testing jesse-mcp server...
+🚀 Testing jesse-ops-mcp server...
 
 1. Testing tools/list...
 ✓ Tools listed: 4
@@ -179,7 +179,7 @@ The foundation is solid and ready for real Jesse integration. Next phase will:
 ### Project Structure
 
 ```
-/home/bk/jesse-mcp/
+/home/bk/jesse-ops-mcp/
 ├── README.md              # Project overview
 ├── requirements.txt        # Dependencies
 ├── server.py             # Main MCP server (Phase 1 complete)

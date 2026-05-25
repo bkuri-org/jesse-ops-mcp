@@ -12,7 +12,7 @@ source: docs/archive/FASTMCP_REFACTORING_PRD.md
 ## Executive Summary
 
 **Primary Objectives**:
-1. Migrate jesse-mcp from manual MCP protocol to FastMCP framework
+1. Migrate jesse-ops-mcp from manual MCP protocol to FastMCP framework
 2. Remove phase namespacing (`phase3/4/5` → root-level modules)
 3. Enable proper MetaMCP integration
 
@@ -39,7 +39,7 @@ source: docs/archive/FASTMCP_REFACTORING_PRD.md
 **Step-by-step execution**:
 
 ```bash
-cd /home/bk/source/jesse-mcp
+cd /home/bk/source/jesse-ops-mcp
 
 # 1. Move phase3/optimizer.py to root
 git mv jesse_mcp/phase3/optimizer.py jesse_mcp/optimizer.py
@@ -141,7 +141,7 @@ from fastmcp import FastMCP
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("jesse-mcp")
+logger = logging.getLogger("jesse-ops-mcp")
 
 # ==================== IMPORTS & VALIDATION ====================
 
@@ -181,7 +181,7 @@ except Exception as e:
 
 # ==================== FASTMCP INITIALIZATION ====================
 
-mcp = FastMCP("jesse-mcp", version="1.0.0")
+mcp = FastMCP("jesse-ops-mcp", version="1.0.0")
 
 # ==================== PHASE 1: BACKTESTING TOOLS ====================
 
@@ -657,7 +657,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="Jesse MCP Server - Quantitative Trading Analysis"
     )
-    parser.add_argument("--version", action="version", version="jesse-mcp 1.0.0")
+    parser.add_argument("--version", action="version", version="jesse-ops-mcp 1.0.0")
     args = parser.parse_args()
     
     server = JesseMCPServer()
@@ -677,10 +677,10 @@ Replace with:
 Jesse MCP Server - CLI entry point
 
 Usage:
-    jesse-mcp                                   # Start with stdio transport
-    jesse-mcp --transport http --port 8000     # Start with HTTP transport
-    jesse-mcp --version                        # Show version
-    jesse-mcp --help                           # Show help
+    jesse-ops-mcp                                   # Start with stdio transport
+    jesse-ops-mcp --transport http --port 8000     # Start with HTTP transport
+    jesse-ops-mcp --version                        # Show version
+    jesse-ops-mcp --help                           # Show help
 """
 
 import sys
@@ -936,7 +936,7 @@ git diff tests/test_e2e.py | grep -A5 "_test_mcp_routing"
 **Step 1: Rename test files**
 
 ```bash
-cd /home/bk/source/jesse-mcp/tests
+cd /home/bk/source/jesse-ops-mcp/tests
 
 # Use git mv to preserve history
 git mv test_phase3.py test_optimizer.py
@@ -1031,7 +1031,7 @@ git status
 
 **Verification command**:
 ```bash
-cd /home/bk/source/jesse-mcp
+cd /home/bk/source/jesse-ops-mcp
 python -c "from jesse_mcp import optimizer, risk_analyzer, pairs_analyzer; print('✅ All imports working')"
 ```
 
@@ -1060,7 +1060,7 @@ python -c "from jesse_mcp import optimizer, risk_analyzer, pairs_analyzer; print
 
 **Find and fix pattern**:
 ```bash
-cd /home/bk/source/jesse-mcp
+cd /home/bk/source/jesse-ops-mcp
 grep -n "Phase [345]:" jesse_mcp/*.py
 # Update each match with non-phase version
 ```
@@ -1121,7 +1121,7 @@ python -c "from jesse_mcp import main, get_optimizer, get_risk_analyzer, get_pai
 **Commands** (in order):
 
 ```bash
-cd /home/bk/source/jesse-mcp
+cd /home/bk/source/jesse-ops-mcp
 
 # 1. Install dependencies with FastMCP
 pip install -e ".[dev]"
@@ -1174,7 +1174,7 @@ timeout 5 python -m jesse_mcp --help || true
 **Commands**:
 
 ```bash
-cd /home/bk/source/jesse-mcp
+cd /home/bk/source/jesse-ops-mcp
 
 # 1. Auto-format with black
 echo "Running black..."
@@ -1219,7 +1219,7 @@ python -c "from jesse_mcp.pairs_analyzer import get_pairs_analyzer; print('✅ P
 **Workflow**:
 
 ```bash
-cd /home/bk/source/jesse-mcp
+cd /home/bk/source/jesse-ops-mcp
 
 # 1. Verify status
 echo "=== Git Status ==="
@@ -1296,7 +1296,7 @@ git log --oneline -3
 **Workflow**:
 
 ```bash
-cd /home/bk/source/jesse-mcp
+cd /home/bk/source/jesse-ops-mcp
 
 # 1. Switch to master (if not already there)
 git checkout master
@@ -1315,36 +1315,36 @@ git log --oneline origin/master -3
 
 # 5. Check MetaMCP sync location
 echo -e "\n=== Checking MetaMCP sync ==="
-ls -la /srv/containers/metamcp/mcp-servers/jesse-mcp/
+ls -la /srv/containers/metamcp/mcp-servers/jesse-ops-mcp/
 
 # 6. Wait for rsync (usually 10-30 seconds)
 sleep 15
 
 # 7. Verify files synced
 echo -e "\n=== Verifying synced files ==="
-ls -la /srv/containers/metamcp/mcp-servers/jesse-mcp/jesse_mcp/
+ls -la /srv/containers/metamcp/mcp-servers/jesse-ops-mcp/jesse_mcp/
 
 # 8. Check specific key files
 echo "Checking server.py..."
-test -f /srv/containers/metamcp/mcp-servers/jesse-mcp/jesse_mcp/server.py && echo "✅ server.py synced" || echo "⚠️  server.py not yet synced"
+test -f /srv/containers/metamcp/mcp-servers/jesse-ops-mcp/jesse_mcp/server.py && echo "✅ server.py synced" || echo "⚠️  server.py not yet synced"
 
 echo "Checking optimizer.py..."
-test -f /srv/containers/metamcp/mcp-servers/jesse-mcp/jesse_mcp/optimizer.py && echo "✅ optimizer.py synced" || echo "⚠️  optimizer.py not yet synced"
+test -f /srv/containers/metamcp/mcp-servers/jesse-ops-mcp/jesse_mcp/optimizer.py && echo "✅ optimizer.py synced" || echo "⚠️  optimizer.py not yet synced"
 
 # 9. Check that phase directories are gone
 echo "Verifying phase directories removed..."
-test ! -d /srv/containers/metamcp/mcp-servers/jesse-mcp/jesse_mcp/phase3 && echo "✅ phase3 directory removed" || echo "⚠️  phase3 still exists"
-test ! -d /srv/containers/metamcp/mcp-servers/jesse-mcp/jesse_mcp/phase4 && echo "✅ phase4 directory removed" || echo "⚠️  phase4 still exists"
-test ! -d /srv/containers/metamcp/mcp-servers/jesse-mcp/jesse_mcp/phase5 && echo "✅ phase5 directory removed" || echo "⚠️  phase5 still exists"
+test ! -d /srv/containers/metamcp/mcp-servers/jesse-ops-mcp/jesse_mcp/phase3 && echo "✅ phase3 directory removed" || echo "⚠️  phase3 still exists"
+test ! -d /srv/containers/metamcp/mcp-servers/jesse-ops-mcp/jesse_mcp/phase4 && echo "✅ phase4 directory removed" || echo "⚠️  phase4 still exists"
+test ! -d /srv/containers/metamcp/mcp-servers/jesse-ops-mcp/jesse_mcp/phase5 && echo "✅ phase5 directory removed" || echo "⚠️  phase5 still exists"
 
 # 10. Check git log on container
 echo -e "\n=== MetaMCP Git History ==="
-cd /srv/containers/metamcp/mcp-servers/jesse-mcp && git log --oneline -3 && cd /home/bk/source/jesse-mcp
+cd /srv/containers/metamcp/mcp-servers/jesse-ops-mcp && git log --oneline -3 && cd /home/bk/source/jesse-ops-mcp
 ```
 
 **Expected results**:
 - ✅ Commit pushed to origin/master
-- ✅ Files synced to `/srv/containers/metamcp/mcp-servers/jesse-mcp/`
+- ✅ Files synced to `/srv/containers/metamcp/mcp-servers/jesse-ops-mcp/`
 - ✅ server.py exists with FastMCP code
 - ✅ optimizer.py, risk_analyzer.py, pairs_analyzer.py exist in root
 - ✅ phase3/, phase4/, phase5/ directories removed
@@ -1357,11 +1357,11 @@ echo "Checking git hooks on server1/server2..."
 # (May need SSH access)
 
 # Manual rsync fallback (if available)
-# rsync -avz /home/bk/source/jesse-mcp/ /srv/containers/metamcp/mcp-servers/jesse-mcp/
+# rsync -avz /home/bk/source/jesse-ops-mcp/ /srv/containers/metamcp/mcp-servers/jesse-ops-mcp/
 
 # Wait a bit longer
 sleep 30
-ls /srv/containers/metamcp/mcp-servers/jesse-mcp/jesse_mcp/
+ls /srv/containers/metamcp/mcp-servers/jesse-ops-mcp/jesse_mcp/
 ```
 
 ---
@@ -1381,8 +1381,8 @@ ls /srv/containers/metamcp/mcp-servers/jesse-mcp/jesse_mcp/
 docker ps | grep metamcp
 # Should show: metamcp container running
 
-# Check logs for jesse-mcp initialization
-docker logs metamcp | grep "jesse-mcp" | tail -20
+# Check logs for jesse-ops-mcp initialization
+docker logs metamcp | grep "jesse-ops-mcp" | tail -20
 # Should show: "✅ Jesse framework initialized"
 #             "✅ Optimizer module loaded"
 #             "✅ Risk analyzer module loaded"
@@ -1394,7 +1394,7 @@ docker logs metamcp | grep "jesse-mcp" | tail -20
 ```bash
 # Log into MetaMCP dashboard
 # URL: https://metamcp.kuri.casa (or internal IP)
-# Navigate to: Admin → Namespaces → crypto → jesse-mcp
+# Navigate to: Admin → Namespaces → crypto → jesse-ops-mcp
 
 # Verify:
 ✅ 17 tools listed
@@ -1415,7 +1415,7 @@ docker logs metamcp | grep "jesse-mcp" | tail -20
 curl -X POST http://metamcp.internal/mcp/tools/call \
   -H "Content-Type: application/json" \
   -d '{
-    "tool": "jesse-mcp/backtest",
+    "tool": "jesse-ops-mcp/backtest",
     "params": {
       "strategy": "Test01",
       "symbol": "BTC-USDT",
@@ -1429,7 +1429,7 @@ curl -X POST http://metamcp.internal/mcp/tools/call \
 # Test: strategy_list
 curl -X POST http://metamcp.internal/mcp/tools/call \
   -H "Content-Type: application/json" \
-  -d '{"tool": "jesse-mcp/strategy_list", "params": {}}'
+  -d '{"tool": "jesse-ops-mcp/strategy_list", "params": {}}'
 # Expected: ✅ Response with list of strategies
 ```
 
@@ -1439,7 +1439,7 @@ curl -X POST http://metamcp.internal/mcp/tools/call \
 curl -X POST http://metamcp.internal/mcp/tools/call \
   -H "Content-Type: application/json" \
   -d '{
-    "tool": "jesse-mcp/optimize",
+    "tool": "jesse-ops-mcp/optimize",
     "params": {
       "strategy": "Test01",
       "symbol": "BTC-USDT",
@@ -1458,7 +1458,7 @@ curl -X POST http://metamcp.internal/mcp/tools/call \
 curl -X POST http://metamcp.internal/mcp/tools/call \
   -H "Content-Type: application/json" \
   -d '{
-    "tool": "jesse-mcp/monte_carlo",
+    "tool": "jesse-ops-mcp/monte_carlo",
     "params": {
       "backtest_result": {"trades": [], "metrics": {}},
       "simulations": 1000
@@ -1473,7 +1473,7 @@ curl -X POST http://metamcp.internal/mcp/tools/call \
 curl -X POST http://metamcp.internal/mcp/tools/call \
   -H "Content-Type: application/json" \
   -d '{
-    "tool": "jesse-mcp/correlation_matrix",
+    "tool": "jesse-ops-mcp/correlation_matrix",
     "params": {
       "backtest_results": [
         {"symbol": "BTC-USDT", "trades": []},
@@ -1503,7 +1503,7 @@ echo '{"method": "tools/list", "params": {}}' | python -m jesse_mcp
 curl -X POST http://metamcp.internal/mcp/tools/call \
   -H "Content-Type: application/json" \
   -d '{
-    "tool": "jesse-mcp/backtest",
+    "tool": "jesse-ops-mcp/backtest",
     "params": {"invalid_param": "value"}
   }'
 # Expected: ✅ Clear error message (400 Bad Request with descriptive error)
@@ -1511,7 +1511,7 @@ curl -X POST http://metamcp.internal/mcp/tools/call \
 # Test non-existent tool
 curl -X POST http://metamcp.internal/mcp/tools/call \
   -H "Content-Type: application/json" \
-  -d '{"tool": "jesse-mcp/nonexistent", "params": {}}'
+  -d '{"tool": "jesse-ops-mcp/nonexistent", "params": {}}'
 # Expected: ✅ 404 or error response
 ```
 
@@ -1519,12 +1519,12 @@ curl -X POST http://metamcp.internal/mcp/tools/call \
 
 ```bash
 # Check MetaMCP logs for errors
-docker logs metamcp | grep -i "error\|jesse-mcp" | tail -50
+docker logs metamcp | grep -i "error\|jesse-ops-mcp" | tail -50
 
 # Verify response times
 time curl -X POST http://metamcp.internal/mcp/tools/call \
   -H "Content-Type: application/json" \
-  -d '{"tool": "jesse-mcp/strategy_list", "params": {}}'
+  -d '{"tool": "jesse-ops-mcp/strategy_list", "params": {}}'
 # Expected: < 1 second for simple tools
 ```
 
@@ -1572,7 +1572,7 @@ time curl -X POST http://metamcp.internal/mcp/tools/call \
 **Phase B Completion**:
 - [ ] Comprehensive commit created
 - [ ] Commit pushed to origin/master
-- [ ] Files synced to MetaMCP (`/srv/containers/metamcp/mcp-servers/jesse-mcp/`)
+- [ ] Files synced to MetaMCP (`/srv/containers/metamcp/mcp-servers/jesse-ops-mcp/`)
 - [ ] Old phase directories removed from MetaMCP
 - [ ] New module files present in MetaMCP
 

@@ -17,7 +17,7 @@ source: docs/archive/PROJECT_FINAL_REPORT.md
 
 ## Executive Summary
 
-The jesse-mcp project has been successfully completed with all 17 quantitative trading analysis tools fully implemented, tested, and integrated into a comprehensive MCP (Model Context Protocol) server. The system is production-ready and passes all end-to-end tests.
+The jesse-ops-mcp project has been successfully completed with all 17 quantitative trading analysis tools fully implemented, tested, and integrated into a comprehensive MCP (Model Context Protocol) server. The system is production-ready and passes all end-to-end tests.
 
 **Key Achievement**: 100% completion of all planned tools with comprehensive testing and validation.
 
@@ -29,7 +29,7 @@ The jesse-mcp project has been successfully completed with all 17 quantitative t
 Create a comprehensive MCP-based server providing 17 advanced quantitative trading analysis tools, structured in 5 phases, each building upon previous tools.
 
 ### Scope
-- **17 Total Tools** across 5 phases
+- **21 Total Tools** across 5 phases
 - **5000+ Lines** of production Python code
 - **500+ Lines** of comprehensive test code
 - **Complete MCP Integration** with routing and handler methods
@@ -46,7 +46,7 @@ Create a comprehensive MCP-based server providing 17 advanced quantitative tradi
 
 ## Final Results
 
-### ✅ Tool Implementation: 17/17 (100%)
+### ✅ Tool Implementation: 21/21 (100%)
 
 #### Phase 1: Backtesting Fundamentals
 1. **backtest()** - Run single backtest with specified parameters
@@ -133,7 +133,7 @@ TEST 6: Performance & Stress Testing
 ### Code Organization
 
 ```
-jesse-mcp/
+jesse-ops-mcp/
 ├── server.py                    # Main MCP server (1200+ lines)
 ├── phase1_backtest.py           # Phase 1 tools (planned)
 ├── phase2_analysis.py           # Phase 2 tools (planned)
@@ -243,7 +243,7 @@ jesse-mcp/
 
 ### Running the Server
 ```bash
-cd /home/bk/source/jesse-mcp
+cd /home/bk/source/jesse-ops-mcp
 python server.py
 ```
 
@@ -378,7 +378,7 @@ Tools are accessible via the Model Context Protocol:
 
 ## Conclusion
 
-The jesse-mcp project has been **successfully completed** with all objectives met and exceeded. The system provides a comprehensive suite of 17 advanced quantitative trading analysis tools, fully integrated into an MCP server with complete testing and documentation.
+The jesse-ops-mcp project has been **successfully completed** with all objectives met and exceeded. The system provides a comprehensive suite of 17 advanced quantitative trading analysis tools, fully integrated into an MCP server with complete testing and documentation.
 
 ### Final Statistics
 - **Lines of Code**: 5000+
@@ -413,6 +413,6 @@ Phase 5 Complete: Pairs Trading & Advanced Analysis Tools
 ---
 
 *Report Generated: 2025-12-09*  
-*Project: jesse-mcp v1.0.0*  
+*Project: jesse-ops-mcp v1.0.0*  
 *All tests passing | Production ready*
 

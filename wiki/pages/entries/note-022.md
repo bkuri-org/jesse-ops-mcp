@@ -11,15 +11,15 @@ source: docs/archive/PROJECT_SUMMARY.md
 
 ## 🎉 Phase 1 Complete: Foundation Established
 
-### Project Created: `jesse-mcp`
+### Project Created: `jesse-ops-mcp`
 
-**Location**: `/home/bk/jesse-mcp/`
+**Location**: `/home/bk/jesse-ops-mcp/`
 
 ### What We Built
 
 #### 1. Complete Project Structure
 ```
-/home/bk/jesse-mcp/
+/home/bk/jesse-ops-mcp/
 ├── README.md                    # Project overview & quick start
 ├── requirements.txt              # Dependencies (mcp, asyncio, etc.)
 ├── server.py                   # Main MCP server (Phase 1)
@@ -48,7 +48,7 @@ source: docs/archive/PROJECT_SUMMARY.md
 ### Test Results ✅
 
 ```
-🚀 Testing jesse-mcp server...
+🚀 Testing jesse-ops-mcp server...
 
 1. Testing tools/list...
 ✓ Tools listed: 4
@@ -73,7 +73,7 @@ Instead of using complex MCP libraries (which had type issues), we implemented:
 
 #### Architecture
 ```
-LLM Client ←→ JSON/stdio ←→ jesse-mcp ←→ Jesse Research Module
+LLM Client ←→ JSON/stdio ←→ jesse-ops-mcp ←→ Jesse Research Module
 ```
 
 ### Ready for Phase 2: Real Implementation
@@ -122,9 +122,9 @@ The server is ready to be added to OpenCode's MCP configuration:
 ```json
 {
   "mcpServers": {
-    "jesse-mcp": {
+    "jesse-ops-mcp": {
       "command": "python",
-      "args": ["/home/bk/jesse-mcp/server.py"],
+      "args": ["/home/bk/jesse-ops-mcp/server.py"],
       "env": {
         "JESSE_PROJECT_PATH": "/srv/containers/jesse"
       }
@@ -177,4 +177,4 @@ The server is ready to be added to OpenCode's MCP configuration:
 - ✅ Clear documentation
 - ✅ Scalable architecture
 
-The `jesse-mcp` project is now ready for Phase 2 development and real Jesse integration!
+The `jesse-ops-mcp` project is now ready for Phase 2 development and real Jesse integration!

@@ -811,8 +811,8 @@ wheels = [
 ]
 
 [[package]]
-name = "jesse-mcp"
-version = "1.3.0"
+name = "jesse-ops-mcp"
+version = "2.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "fastmcp" },

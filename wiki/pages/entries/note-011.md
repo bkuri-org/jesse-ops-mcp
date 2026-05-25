@@ -108,10 +108,10 @@ source: docs/archive/PRD_v1.0.0.md
 ## 🔄 Parallel Execution Guidelines
 
 ### File Ownership Boundaries
-- **Agent A**: `~/source/jesse-mcp/strategies/*/development/`
-- **Agent B**: `~/source/jesse-mcp/strategies/*/backtesting/`
-- **Agent C**: `~/source/jesse-mcp/strategies/*/risk-analysis/`
-- **Shared State**: `~/source/jesse-mcp/shared-state/`
+- **Agent A**: `~/source/jesse-ops-mcp/strategies/*/development/`
+- **Agent B**: `~/source/jesse-ops-mcp/strategies/*/backtesting/`
+- **Agent C**: `~/source/jesse-ops-mcp/strategies/*/risk-analysis/`
+- **Shared State**: `~/source/jesse-ops-mcp/shared-state/`
 
 ### Tool Exclusivity
 - **No Overlap**: Each tool assigned to single primary agent
@@ -165,7 +165,7 @@ source: docs/archive/PRD_v1.0.0.md
 ### Global Settings
 - **Default Risk Profile**: moderate (2% portfolio risk, 3x leverage)
 - **Parallel Execution**: Maximum 3 concurrent agents
-- **Shared State Location**: `~/source/jesse-mcp/shared-state/`
+- **Shared State Location**: `~/source/jesse-ops-mcp/shared-state/`
 - **Backup Strategy**: Daily snapshots of all strategy data
 
 ### Agent-Specific Settings

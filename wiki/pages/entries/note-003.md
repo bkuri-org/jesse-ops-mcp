@@ -9,7 +9,7 @@ source: docs/USING_WITH_LLMS.md
 
 # Using Jesse-MCP with LLM Chat Interfaces
 
-The jesse-mcp MCP server provides a transparent, language-agnostic interface to Jesse's trading capabilities. **Any LLM chat interface that supports MCP** can use these tools to help improve trading strategies.
+The jesse-ops-mcp MCP server provides a transparent, language-agnostic interface to Jesse's trading capabilities. **Any LLM chat interface that supports MCP** can use these tools to help improve trading strategies.
 
 ---
 
@@ -25,7 +25,7 @@ The jesse-mcp MCP server provides a transparent, language-agnostic interface to 
                  │ (stdio/http)
                  ↓
 ┌────────────────────────────────────┐
-│    jesse-mcp Server                │
+│    jesse-ops-mcp Server                │
 │  (17 trading analysis tools)       │
 └────────────────┬────────────────────┘
                  │
@@ -284,7 +284,7 @@ LLM:
 
 ### Scalable
 - Multiple users can talk to their favorite LLM
-- All using the same jesse-mcp server
+- All using the same jesse-ops-mcp server
 - All benefiting from the same 17 tools
 
 ### User-Friendly
@@ -297,8 +297,8 @@ LLM:
 
 ## Next Steps
 
-1. **Start the jesse-mcp server**: It runs as MCP protocol
-2. **Connect your LLM**: Configure it to use jesse-mcp MCP server
+1. **Start the jesse-ops-mcp server**: It runs as MCP protocol
+2. **Connect your LLM**: Configure it to use jesse-ops-mcp MCP server
 3. **Have conversations**: Natural language about your strategies
 4. **Let the LLM orchestrate**: It calls tools as needed
 5. **Get intelligent responses**: Based on real trading analysis

@@ -245,7 +245,7 @@ The beauty of this architecture:
 
 ### Option A: Use with Claude
 1. Install `npx -g mcp`
-2. Configure jesse-mcp in MCP settings
+2. Configure jesse-ops-mcp in MCP settings
 3. Talk to Claude about your strategies
 
 ### Option B: Use with ChatGPT+
@@ -255,14 +255,14 @@ The beauty of this architecture:
 
 ### Option C: Custom Integration
 1. Implement MCP client in your language
-2. Connect to jesse-mcp server
+2. Connect to jesse-ops-mcp server
 3. Send tool calls via MCP protocol
 
 ---
 
 ## Summary
 
-**jesse-mcp is a solid, transparent, MCP-compliant layer that gives any LLM the ability to help improve trading strategies through natural conversation.**
+**jesse-ops-mcp is a solid, transparent, MCP-compliant layer that gives any LLM the ability to help improve trading strategies through natural conversation.**
 
 The 17 tools are ready. The infrastructure is solid. The documentation is clear. All that's needed is an LLM with MCP support to orchestrate them.
 

@@ -9,10 +9,10 @@ source: docs/archive/REFACTORING_STRATEGY.md
 
 # Jesse-MCP Package Refactoring Strategy
 
-**Objective**: Refactor jesse-mcp into a proper Python package structure that can be:
+**Objective**: Refactor jesse-ops-mcp into a proper Python package structure that can be:
 1. Installed as a package (for future PyPI distribution)
 2. Deployed with Option 2 (custom Dockerfile in MetaMCP podman container)
-3. Run via entry points (e.g., `jesse-mcp` command)
+3. Run via entry points (e.g., `jesse-ops-mcp` command)
 4. Properly imported by other packages
 
 **Current Status**: Flat file structure in root directory
@@ -24,7 +24,7 @@ source: docs/archive/REFACTORING_STRATEGY.md
 
 ### File Structure
 ```
-/home/bk/source/jesse-mcp/
+/home/bk/source/jesse-ops-mcp/
 ├── server.py (main MCP server, 1200+ lines)
 ├── phase3_optimizer.py (1000+ lines)
 ├── phase4_risk_analyzer.py (1000+ lines)
@@ -58,7 +58,7 @@ from phase5_pairs_analyzer import get_pairs_analyzer
 
 ### Directory Structure
 ```
-/home/bk/source/jesse-mcp/
+/home/bk/source/jesse-ops-mcp/
 ├── jesse_mcp/                           # Main package directory
 │   ├── __init__.py                      # Package initialization
 │   ├── __main__.py                      # Entry point for `python -m jesse_mcp`
@@ -302,9 +302,9 @@ if __name__ == "__main__":
 Jesse MCP Server - CLI entry point
 
 Usage:
-    jesse-mcp                    # Start the server
-    jesse-mcp --help             # Show help
-    jesse-mcp --version          # Show version
+    jesse-ops-mcp                    # Start the server
+    jesse-ops-mcp --help             # Show help
+    jesse-ops-mcp --version          # Show version
 """
 
 import argparse
@@ -319,7 +319,7 @@ def main():
     parser.add_argument(
         "--version",
         action="version",
-        version="jesse-mcp 1.0.0"
+        version="jesse-ops-mcp 1.0.0"
     )
     
     args = parser.parse_args()
@@ -407,7 +407,7 @@ from jesse_mcp.phase3.optimizer import get_optimizer
 ```python
 #!/usr/bin/env python3
 """
-Setup configuration for jesse-mcp package
+Setup configuration for jesse-ops-mcp package
 """
 
 from setuptools import setup, find_packages
@@ -416,7 +416,7 @@ with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
 setup(
-    name="jesse-mcp",
+    name="jesse-ops-mcp",
     version="1.0.0",
     author="Jesse Team",
     description="MCP server for quantitative trading analysis",
@@ -440,7 +440,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "jesse-mcp=jesse_mcp.cli:main",
+            "jesse-ops-mcp=jesse_mcp.cli:main",
         ],
     },
     classifiers=[
@@ -463,7 +463,7 @@ requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "jesse-mcp"
+name = "jesse-ops-mcp"
 version = "1.0.0"
 description = "MCP server for quantitative trading analysis"
 readme = "README.md"
@@ -488,7 +488,7 @@ dev = [
 ]
 
 [project.scripts]
-jesse-mcp = "jesse_mcp.cli:main"
+jesse-ops-mcp = "jesse_mcp.cli:main"
 
 [tool.setuptools]
 packages = ["jesse_mcp"]
@@ -544,12 +544,12 @@ mypy>=0.990
 
 **Create Dockerfile** (to be used on server2):
 ```dockerfile
-# Dockerfile for jesse-mcp in MetaMCP
+# Dockerfile for jesse-ops-mcp in MetaMCP
 FROM metamcp:latest
 
-# Copy the jesse-mcp source code
-COPY . /app/jesse-mcp
-WORKDIR /app/jesse-mcp
+# Copy the jesse-ops-mcp source code
+COPY . /app/jesse-ops-mcp
+WORKDIR /app/jesse-ops-mcp
 
 # Install runtime dependencies
 RUN pip install -q -r requirements.txt
@@ -558,10 +558,10 @@ RUN pip install -q -r requirements.txt
 RUN pip install -e .
 
 # Verify installation
-RUN jesse-mcp --version
+RUN jesse-ops-mcp --version
 
 # The entry point is configured via setup.py
-# MetaMCP will call: jesse-mcp (via console_scripts entry point)
+# MetaMCP will call: jesse-ops-mcp (via console_scripts entry point)
 ```
 
 **Create docker-compose.override.yml** (for local testing):
@@ -572,16 +572,16 @@ services:
     environment:
       - JESSE_MCP_ENABLED=true
     volumes:
-      - ./jesse_mcp:/app/jesse-mcp
+      - ./jesse_mcp:/app/jesse-ops-mcp
 ```
 
 **Create installation documentation** (DOCKER_SETUP.md):
 ```markdown
-# Adding jesse-mcp to MetaMCP on Server2
+# Adding jesse-ops-mcp to MetaMCP on Server2
 
 ## Step 1: Build Custom Docker Image
 ```bash
-cd /path/to/jesse-mcp
+cd /path/to/jesse-ops-mcp
 docker build -t metamcp-jesse:latest -f Dockerfile .
 ```
 
@@ -591,9 +591,9 @@ In the MetaMCP dashboard at https://metamcp.kuri.casa:
 1. Navigate to **MCP Servers**
 2. Click **Add Server**
 3. Fill in the configuration:
-   - **Name**: jesse-mcp
+   - **Name**: jesse-ops-mcp
    - **Type**: STDIO
-   - **Command**: jesse-mcp
+   - **Command**: jesse-ops-mcp
    - **Description**: Quantitative trading analysis tools (17 tools across 5 phases)
 4. Click **Create Server**
 
@@ -601,7 +601,7 @@ In the MetaMCP dashboard at https://metamcp.kuri.casa:
 1. Navigate to **Namespaces**
 2. Click **Create Namespace**
 3. Name it something like "trading-analysis"
-4. Add "jesse-mcp" server to the namespace
+4. Add "jesse-ops-mcp" server to the namespace
 5. Click **Create Namespace**
 
 ## Step 4: Create Endpoint
@@ -611,7 +611,7 @@ In the MetaMCP dashboard at https://metamcp.kuri.casa:
 4. Enable API Key Authentication
 5. Click **Create Endpoint**
 
-The jesse-mcp tools are now available through MetaMCP!
+The jesse-ops-mcp tools are now available through MetaMCP!
 ```
 
 **Deliverables**:
@@ -628,7 +628,7 @@ The jesse-mcp tools are now available through MetaMCP!
 **Verification Tasks**:
 - [ ] Can import the package: `python -c "import jesse_mcp; print(jesse_mcp.__version__)"`
 - [ ] Can run as module: `python -m jesse_mcp --version`
-- [ ] Can run console script: `jesse-mcp --version` (after `pip install -e .`)
+- [ ] Can run console script: `jesse-ops-mcp --version` (after `pip install -e .`)
 - [ ] All tests pass: `pytest tests/ -v`
 - [ ] Can import submodules: `python -c "from jesse_mcp.phase3.optimizer import get_optimizer"`
 - [ ] Package structure is correct: All files in right locations
@@ -653,7 +653,7 @@ python -m jesse_mcp --version
 # Test 3: Console script (requires installation)
 echo "Test 3: Testing console script..."
 pip install -e . > /dev/null 2>&1
-jesse-mcp --version
+jesse-ops-mcp --version
 
 # Test 4: Import core modules
 echo "Test 4: Importing core modules..."
@@ -780,13 +780,13 @@ After refactoring, the package can be run in multiple ways:
 python -m jesse_mcp
 
 # Method 2: Via console script (after installation)
-jesse-mcp
+jesse-ops-mcp
 
 # Method 3: Programmatically
 python -c "from jesse_mcp import JesseMCPServer; import asyncio; asyncio.run(JesseMCPServer().run())"
 
 # Method 4: In MetaMCP via STDIO server
-# MetaMCP will invoke: jesse-mcp
+# MetaMCP will invoke: jesse-ops-mcp
 ```
 
 ---
@@ -800,9 +800,9 @@ The refactoring will be considered successful when:
 - ✅ No circular dependencies exist
 - ✅ All tests pass (100%)
 - ✅ Package installs cleanly: `pip install -e .`
-- ✅ Console script works: `jesse-mcp --version`
+- ✅ Console script works: `jesse-ops-mcp --version`
 - ✅ Can be imported: `import jesse_mcp`
-- ✅ Entry points work: `jesse-mcp` runs the server
+- ✅ Entry points work: `jesse-ops-mcp` runs the server
 - ✅ Ready for Dockerfile deployment: Works in custom Docker image
 - ✅ Documentation updated: README and new docs explain structure
 - ✅ Git history clean: Meaningful commits throughout

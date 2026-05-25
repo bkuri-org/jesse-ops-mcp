@@ -246,7 +246,7 @@ analysis = analyze_results(
 ## 📊 Repository Status
 
 ```
-jesse-mcp/
+jesse-ops-mcp/
 ├── .git/                     (10 commits total)
 ├── mock_jesse.py             (NEW - 300+ lines)
 ├── phase3_optimizer.py        (NEW - 1000+ lines)  

@@ -21,7 +21,7 @@ The Jesse MCP Agent System extends the base MCP server with three specialized ag
                     MCP Protocol (stdio/HTTP)
                              │
 ┌─────────────────────────────────────────────────────────────┐
-│                    MCP Server (jesse-mcp)                  │
+│                    MCP Server (jesse-ops-mcp)                  │
 │                     17 Trading Tools                        │
 └────────────────────────────┬────────────────────────────────┘
                              │

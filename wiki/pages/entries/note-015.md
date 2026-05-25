@@ -11,7 +11,7 @@ source: docs/archive/PHASE2_COMPLETE.md
 
 **Status**: ✅ COMPLETE  
 **Date**: 2024-11-26  
-**Location**: `~/source/jesse-mcp/`
+**Location**: `~/source/jesse-ops-mcp/`
 
 ## Phase 2 Achievements
 
