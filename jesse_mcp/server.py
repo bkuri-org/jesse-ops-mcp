@@ -3,13 +3,13 @@
 Jesse Ops MCP Server - FastMCP Implementation
 
 Operational MCP server complementing Jesse's built-in strategy-dev MCP.
-Provides 49 core tools + 23 agent orchestration tools:
+Provides 47 core tools + 23 agent orchestration tools:
 
-Core tools (49):
-- Backtesting (4): backtest, backtest_cancel, active_workers, backtest_benchmark
+Core tools (47):
+ - Backtesting (4): backtest, backtest_cancel, active_workers, backtest_benchmark
 - Strategy Job Mgmt (6): create_status, create_cancel, jobs_list, rate_limit_status, cache_stats, cache_clear
 - Optimization (6): optimize, optimization_cancel, monte_carlo_cancel, walk_forward, backtest_batch, analyze_results
-- Risk Analysis (7): monte_carlo, native_monte_carlo, var_calculation, stress_test, risk_report, plot_significance_test, rule_significance_test
+- Risk Analysis (5): monte_carlo, var_calculation, stress_test, risk_report, plot_significance_test
 - Pairs Trading (4): correlation_matrix, pairs_backtest, factor_analysis, regime_detector
 - Live Trading (17): session management, order execution, position monitoring
 - Community (5): jesse.trade strategy browsing & comparison
@@ -115,7 +115,7 @@ def _initialize_dependencies():
 
 # ==================== FASTMCP INITIALIZATION ====================
 
-mcp = FastMCP("jesse-ops-mcp", version="2.0.0")
+mcp = FastMCP("jesse-ops-mcp", version="2.1.0")
 
 
 @mcp.custom_route("/health", methods=["GET"])

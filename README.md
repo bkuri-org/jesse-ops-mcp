@@ -101,17 +101,15 @@ Full live and paper trading lifecycle:
 | `backtest_batch` | Run concurrent multi-asset backtests |
 | `analyze_results` | Extract insights from optimization results |
 
-### Risk Analysis (7 tools)
+### Risk Analysis (5 tools)
 
 | Tool | Description |
 |------|-------------|
 | `monte_carlo` | Monte Carlo simulations for risk assessment |
-| `native_monte_carlo` | Jesse-native Monte Carlo via REST API |
 | `var_calculation` | Value at Risk (historical, parametric, Monte Carlo) |
 | `stress_test` | Test under extreme market scenarios |
 | `risk_report` | Comprehensive risk assessment report |
 | `plot_significance_test` | Statistical significance visualization |
-| `rule_significance_test` | Rule-based significance testing |
 
 ### Pairs Trading (4 tools)
 
