@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "jesse-ops-mcp"
-version = "2.0.0"
+version = "2.1.0"
 description = "Operational MCP server for Jesse — live trading, risk, optimization, pairs. Complements the built-in Jesse MCP."
 readme = "README.md"
 license = "MIT"
