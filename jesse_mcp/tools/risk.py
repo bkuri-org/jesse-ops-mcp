@@ -127,8 +127,8 @@ def register_risk_tools(mcp):
         Creates a histogram of the bootstrap sampling distribution with the
         observed mean annotated, saved as a PNG file. Requires local Jesse installation.
 
-        Use alongside rule_significance_test() for visual analysis of whether
-        a strategy's performance is statistically significant.
+        Use alongside Jesse's built-in significance test tools for visual analysis
+        of whether a strategy's performance is statistically significant.
 
         Args:
             strategy: Strategy name to test
