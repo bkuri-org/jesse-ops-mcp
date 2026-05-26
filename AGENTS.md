@@ -19,6 +19,31 @@ python -m jesse_mcp              # Run server (stdio)
 python -m jesse_mcp --transport http --port 8000  # Run server (HTTP)
 ```
 
+## Jesse Slim Install
+
+jesse-mcp needs `jesse.research` but NOT the full web stack (fastapi, uvicorn, ray, etc.).
+The `scripts/slim-jesse.sh` script patches jesse's init files to strip web-only imports,
+saving ~300MB and eliminating dependency conflicts with fastmcp.
+
+**Auto-patched on first import** — `integrations.py` runs the script automatically before
+importing `jesse.research`. A marker file (`.jesse-mcp-patched`) prevents re-patching.
+
+**Manual run** (e.g., for provisioning):
+```bash
+./scripts/slim-jesse.sh /path/to/venv   # Patch a specific venv
+./scripts/slim-jesse.sh                  # Auto-detect from current Python
+```
+
+**What it patches:**
+| File | Change |
+|------|--------|
+| `jesse/__init__.py` | Strip fastapi/controllers/router/static/CLI imports |
+| `jesse/research/__init__.py` | Lazy-import ray/optuna/sklearn via `__getattr__` |
+| `aioredis.py` | Stub for `redis>=4` compat (real aioredis is broken on 3.11+) |
+
+**Server deployments**: Jesse's `.env` must be accessible from jesse-mcp's CWD.
+Symlink: `ln -s /srv/containers/jesse/.env /srv/containers/jesse-mcp/.env`
+
 ## Code Style
 
 - **Formatting**: black (88 chars), double quotes
