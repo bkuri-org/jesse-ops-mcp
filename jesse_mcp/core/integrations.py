@@ -9,6 +9,7 @@ import sys
 import os
 import re
 import shutil
+import subprocess
 import logging
 from typing import Dict, Any, Optional
 import traceback
@@ -63,10 +64,39 @@ except Exception as e:
     JESSE_ERROR = str(e)
     logger.warning(f"⚠️ Jesse API not accessible at {JESSE_API_URL}: {e}")
 
+
+def _ensure_jesse_patched() -> bool:
+    script_dir = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "scripts"
+    )
+    script_path = os.path.join(script_dir, "slim-jesse.sh")
+    if not os.path.isfile(script_path):
+        logger.debug(f"slim-jesse.sh not found at {script_path}")
+        return False
+    try:
+        venv_path = os.path.dirname(sys.executable)
+        result = subprocess.run(
+            ["bash", script_path, venv_path],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        if result.returncode == 0:
+            for line in result.stdout.strip().split("\n"):
+                logger.info(line)
+            return True
+        else:
+            logger.warning(f"slim-jesse.sh failed: {result.stderr.strip()}")
+            return False
+    except Exception as e:
+        logger.warning(f"slim-jesse.sh error: {e}")
+        return False
+
+
 # Try to import Jesse's research module (only available with local installation)
 if JESSE_PATH:
     try:
-        # This will fail if Jesse dependencies are not installed
+        _ensure_jesse_patched()
         import jesse.helpers as jh
         from jesse import research
 
