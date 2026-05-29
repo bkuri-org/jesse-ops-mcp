@@ -67,12 +67,22 @@ def start_live_session(
                 }
             ]
 
-        default_config = {
+        full_config = {
             "warm_up_candles": 240,
             "logging": {"output_type": "json"},
+            "exchanges": {},
+            "notifications": {},
+            "persistency": {"storage_type": "json"},
+            "generate_candles_from_1m": False,
         }
         if config:
-            default_config.update(config)
+            full_config.update(config)
+        full_config.setdefault("exchanges", {})
+        full_config.setdefault("logging", {"output_type": "json"})
+        full_config.setdefault("notifications", {})
+        full_config.setdefault("persistency", {"storage_type": "json"})
+        full_config.setdefault("generate_candles_from_1m", False)
+        full_config.setdefault("warm_up_candles", 240)
 
         payload = {
             "id": str(uuid.uuid4()),
@@ -81,7 +91,7 @@ def start_live_session(
             "notification_api_key_id": notification_api_key_id,
             "routes": routes,
             "data_routes": data_routes,
-            "config": default_config,
+            "config": full_config,
             "debug_mode": debug_mode,
             "paper_mode": paper_mode,
         }

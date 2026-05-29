@@ -13,6 +13,7 @@ Configuration (via mcproxy or environment variables):
 """
 
 import json
+import subprocess
 import logging
 import os
 from typing import Any, Dict, List, Optional
@@ -747,6 +748,39 @@ class JesseRESTClient:
         """Check if jesse-live plugin is installed and available."""
         return live.check_live_plugin_available(self.session, self.base_url)
 
+
+    @staticmethod
+    def _pre_start_live_cleanup(base_url: str) -> Dict[str, Any]:
+        """Run DB cleanup before starting a live session to prevent corrupted state."""
+        cleanup_script = """import sys
+sys.path.insert(0, '/app')
+from jesse.modes.import_candles_mode import drivers
+from jesse.services.db import database
+from jesse.models import LiveSession
+try:
+    database.db.rollback()
+    drivers.flush()
+    LiveSession.delete().where(LiveSession.state.in_(['stopped', 'crashed', 'terminated'])).execute()
+    database.db.close()
+    print('Cleanup successful')
+except Exception as e:
+    print(f'Cleanup error (non-fatal): {e}')
+    try:
+        database.db.close()
+    except:
+        pass
+"""
+        try:
+            result = subprocess.run(
+                ["podman", "exec", "jesse", "python3", "-c", cleanup_script],
+                capture_output=True, text=True, timeout=30
+            )
+            logger.info("Pre-start DB cleanup completed")
+            return {"success": True}
+        except Exception as e:
+            logger.warning(f"DB cleanup skipped: {e}")
+            return {"success": True, "note": f"cleanup skipped: {e}"}
+
     def start_live_session(
         self,
         strategy: str,
@@ -762,6 +796,7 @@ class JesseRESTClient:
         data_routes: Optional[List[Dict[str, str]]] = None,
     ) -> Dict[str, Any]:
         """Start a live or paper trading session."""
+        self._pre_start_live_cleanup(self.base_url)
         return live.start_live_session(
             self.session,
             self.base_url,
