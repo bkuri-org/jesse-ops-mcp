@@ -407,6 +407,115 @@ def register_live_tools(mcp):
 
     @mcp.tool
     @tool_error_handler
+    def paper_start_multi(
+        strategy: str,
+        routes: list,
+        exchange: str = "Binance Spot",
+        exchange_api_key_id: str = "",
+        data_routes: Optional[list] = None,
+        starting_balance: float = 10000,
+        leverage: float = 1,
+        fee: float = 0.001,
+        session_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Start a multi-route paper trading session (single session, multiple pairs).
+
+        Runs one strategy across multiple symbols/timeframes in a single
+        Jesse live session, instead of spawning one session per pair.
+
+        Args:
+            strategy: Strategy name (e.g., 'RSI_mean_reversion')
+            routes: List of route dicts, each with 'symbol' and optionally
+                    'exchange' and 'timeframe'. When omitted, the top-level
+                    exchange and '1h' timeframe are used as defaults.
+                    Example: [{"symbol": "XRP-USDT"}, {"symbol": "BTC-USDT", "timeframe": "4h"}]
+            exchange: Default exchange for all routes (default: 'Binance Spot')
+            exchange_api_key_id: ID of stored exchange API key in Jesse
+            data_routes: Optional data route overrides. Auto-generated from
+                         routes if omitted (each needs exchange, symbol, timeframe).
+            starting_balance: Initial capital per route (default: 10000)
+            leverage: Futures leverage (default: 1)
+            fee: Trading fee rate (default: 0.001)
+            session_id: Optional custom session ID (auto-generated if not provided)
+
+        Returns:
+            Dict with session_id, status, routes count, and configuration
+        """
+        if not routes:
+            return {"error": "routes must be a non-empty list of route objects"}
+
+        # Build route objects with defaults from top-level params
+        built_routes = []
+        for r in routes:
+            if isinstance(r, dict):
+                built_routes.append({
+                    "exchange": r.get("exchange", exchange),
+                    "strategy": strategy,
+                    "symbol": r.get("symbol", ""),
+                    "timeframe": r.get("timeframe", "1h"),
+                })
+            elif isinstance(r, str):
+                built_routes.append({
+                    "exchange": exchange,
+                    "strategy": strategy,
+                    "symbol": r,
+                    "timeframe": "1h",
+                })
+            else:
+                return {
+                    "error": f"Invalid route item: {r!r}. "
+                            "Each route must be a dict with 'symbol' key or a symbol string.",
+                }
+
+        # Validate all routes have a symbol
+        for i, r in enumerate(built_routes):
+            if not r["symbol"]:
+                return {"error": f"Route {i} missing 'symbol'"}
+
+        # Auto-generate data_routes if not provided
+        if data_routes is None:
+            data_routes = [
+                {
+                    "exchange": r["exchange"],
+                    "symbol": r["symbol"],
+                    "timeframe": r["timeframe"],
+                }
+                for r in built_routes
+            ]
+
+        client = get_client()
+
+        config = {
+            "starting_balance": starting_balance,
+            "fee": fee,
+            "futures_leverage": leverage,
+        }
+
+        result = client.start_live_session(
+            strategy=strategy,
+            symbol=built_routes[0]["symbol"],
+            timeframe=built_routes[0]["timeframe"],
+            exchange=exchange,
+            exchange_api_key_id=exchange_api_key_id,
+            paper_mode=True,
+            config=config,
+            routes=built_routes,
+            data_routes=data_routes,
+        )
+
+        if "error" not in result:
+            result["mode"] = "paper"
+            result["routes_count"] = len(built_routes)
+            result["starting_balance"] = starting_balance
+            result["leverage"] = leverage
+            result["fee"] = fee
+            result["routes"] = built_routes
+
+        return result
+
+    @mcp.tool
+    @tool_error_handler
     def paper_stop(session_id: str) -> Dict[str, Any]:
         """
         Stop a paper trading session and return final metrics.
