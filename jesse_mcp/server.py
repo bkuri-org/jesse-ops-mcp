@@ -154,6 +154,7 @@ def _register_all_tools():
     from jesse_mcp.tools.pairs import register_pairs_tools
     from jesse_mcp.tools.live import register_live_tools
     from jesse_mcp.tools.jesse_trade import register_jesse_trade_tools
+    from jesse_mcp.tools.ml import register_ml_tools
 
     register_backtesting_tools(mcp)
     logger.info("✅ Backtesting tools registered")
@@ -175,6 +176,9 @@ def _register_all_tools():
 
     register_jesse_trade_tools(mcp)
     logger.info("✅ jesse.trade community tools registered")
+
+    register_ml_tools(mcp)
+    logger.info("✅ ML tools registered")
 
 
 # ==================== MAIN ENTRY POINT ====================
