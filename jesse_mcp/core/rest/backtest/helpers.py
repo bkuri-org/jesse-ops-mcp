@@ -139,8 +139,17 @@ def build_backtest_payload(
     benchmark: bool = False,
     candles_pipeline_class: Optional[str] = None,
     candles_pipeline_kwargs: Optional[Dict[str, Any]] = None,
+    hyperparameters: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
-    """Build backtest payload matching Jesse 1.13.x format."""
+    """Build backtest payload matching Jesse 1.13.x format.
+
+    Args:
+        hyperparameters: Optional dict of hyperparameter overrides. Jesse expects
+            these as a ``dna`` array per route (one entry per hyperparameter).
+            Keys must match the names returned by the strategy's
+            ``hyperparameters()`` method. ``ML_THRESHOLD`` and other class-level
+            constants must also be declared in ``hyperparameters()`` to be tunable.
+    """
     formatted_routes = [
         {
             "strategy": r["strategy"],
@@ -149,6 +158,16 @@ def build_backtest_payload(
         }
         for r in routes
     ]
+
+    # Inject hyperparameters as Jesse's expected `dna` array on each route.
+    # If the strategy declares a hyperparameter in its `hyperparameters()` method,
+    # we can override it; otherwise the strategy's default applies.
+    if hyperparameters:
+        dna = [{"name": k, "value": v} for k, v in hyperparameters.items()]
+        for route in formatted_routes:
+            # type: ignore[assignment] — route is dict[str, str] by signature; we
+            # need to extend it with a `dna` key for Jesse's dna-array protocol.
+            route["dna"] = dna  # type: ignore[index]
 
     formatted_data_routes = []
     if data_routes:

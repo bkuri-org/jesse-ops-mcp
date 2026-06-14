@@ -171,6 +171,7 @@ class JesseRESTClient:
                 benchmark=benchmark,
                 candles_pipeline_class=candles_pipeline_class,
                 candles_pipeline_kwargs=candles_pipeline_kwargs,
+                hyperparameters=hyperparameters,
             )
 
             result = backtest.execute_backtest(self.session, self.base_url, payload)

@@ -83,6 +83,7 @@ def backtest(
             benchmark=benchmark,
             candles_pipeline_class=candles_pipeline_class,
             candles_pipeline_kwargs=candles_pipeline_kwargs,
+            hyperparameters=hyperparameters,
         )
 
         result = bt_api.execute_backtest(session, base_url, payload)

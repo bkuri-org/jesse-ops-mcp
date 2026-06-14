@@ -5,11 +5,19 @@ Optimization methods for Jesse REST API client.
 
 import logging
 import uuid
+from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
 import requests
 
 from jesse_mcp.core.rate_limiter import get_rate_limiter
+
+
+def _add_days(date_str: str, days: int) -> str:
+    """Add N days to a YYYY-MM-DD date string."""
+    dt = datetime.strptime(date_str, "%Y-%m-%d")
+    return (dt + timedelta(days=days)).strftime("%Y-%m-%d")
+
 
 logger = logging.getLogger("jesse-mcp.rest-client")
 
@@ -32,7 +40,10 @@ def rate_limited_optimization(
         logger.error(f"Jesse API optimization 422: {error_detail}")
         raise RuntimeError(f"Jesse API optimization error: {error_detail}")
     response.raise_for_status()
-    return response.json()
+    result = response.json()
+    if isinstance(result, list):
+        return {"sessions": result, "success": True}
+    return result
 
 
 def rate_limited_monte_carlo(
@@ -99,6 +110,7 @@ def build_optimization_payload(
                 "futures_leverage_mode": "cross",
             }
         },
+        "trials": 0,
     }
 
     hyperparameters = []
@@ -126,6 +138,14 @@ def build_optimization_payload(
         hyperparameters.append(hp)
 
     n_trials = param_space.get("n_trials") if isinstance(param_space.get("n_trials"), int) else 50
+    config["trials"] = n_trials
+    config["exchange"] = {
+        "name": exchange,
+        "type": exchange_type,
+        "futures_leverage": int(leverage),
+        "futures_leverage_mode": "cross",
+    }
+
 
     return {
         "id": str(uuid.uuid4()),
@@ -135,8 +155,9 @@ def build_optimization_payload(
         "config": config,
         "training_start_date": start_date,
         "training_finish_date": end_date,
+        # testing window: 30 days immediately after training end
         "testing_start_date": end_date,
-        "testing_finish_date": end_date,
+        "testing_finish_date": _add_days(end_date, 30),
         "optimal_total": n_trials,
         "fast_mode": False,
         "cpu_cores": 1,
