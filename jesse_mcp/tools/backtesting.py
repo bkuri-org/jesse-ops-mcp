@@ -22,6 +22,60 @@ from jesse_mcp.tools._utils import (
 logger = logging.getLogger("jesse-mcp.backtesting")
 
 
+def _synthesize_equity_curve(
+    result: Dict[str, Any], starting_balance: float
+) -> List[List[float]]:
+    """Build an equity curve from a backtest result's trade list.
+
+    Jesse's REST API does not propagate the ``generate_equity_curve`` flag
+    through to its backtest controller, so the JSON response from
+    ``POST /backtest`` always contains an empty ``equity_curve`` list. This
+    helper reconstructs the running balance from the trade list, matching
+    Jesse's internal ``[timestamp_ms, balance]`` pair format.
+
+    Args:
+        result: The backtest result dict, expected to contain a ``trades`` key
+            with a list of trade dicts. Each trade must have ``opened_at`` (or
+            ``closed_at``) timestamp in milliseconds and a ``pnl`` field (net
+            profit in account currency, may be negative).
+        starting_balance: Initial account balance to start the curve from.
+
+    Returns:
+        A list of ``[timestamp_ms, balance]`` pairs sorted by time. Always
+        includes the starting balance at index 0 if there are no trades.
+    """
+    trades = result.get("trades") or []
+    if not trades:
+        return []
+
+    points: List[List[float]] = []
+    running_balance = float(starting_balance)
+
+    # Sort by opened_at if available, else closed_at
+    def trade_ts(t: Dict[str, Any]) -> int:
+        return int(
+            t.get("closed_at")
+            or t.get("opened_at")
+            or t.get("exit_at")
+            or t.get("entry_at")
+            or 0
+        )
+
+    sorted_trades = sorted(trades, key=trade_ts)
+    for trade in sorted_trades:
+        pnl = trade.get("pnl")
+        if pnl is None:
+            # Some trade formats use pnl_percentage; skip if no absolute pnl
+            continue
+        ts = trade_ts(trade)
+        if ts <= 0:
+            continue
+        running_balance += float(pnl)
+        points.append([float(ts), running_balance])
+
+    return points
+
+
 def register_backtesting_tools(mcp):
     """Register backtesting tools with the MCP server"""
 
@@ -39,8 +93,8 @@ def register_backtesting_tools(mcp):
         leverage: float = 1,
         exchange_type: str = "futures",
         hyperparameters: Optional[Dict[str, Any]] = None,
-        include_trades: bool = False,
-        include_equity_curve: bool = False,
+        include_trades: bool = True,
+        include_equity_curve: bool = True,
         include_logs: bool = False,
         fast_mode: bool = True,
         benchmark: bool = False,
@@ -61,6 +115,12 @@ def register_backtesting_tools(mcp):
         Args:
             fast_mode: Enable fast mode for orders-of-magnitude speedup (default: True)
             benchmark: Enable benchmark mode for buy-and-hold comparison (default: False)
+            include_trades: Include full trade list in result (default: True — needed for
+                equity-curve synthesis and downstream tools like monte_carlo)
+            include_equity_curve: Include synthesized equity curve in result (default: True).
+                Jesse's REST API does not expose a direct equity-curve flag, so we synthesize
+                the curve from the trade list. Set to False to skip the synthesis step and
+                reduce response size for callers that don't need it.
             candles_pipeline_class: Custom candles pipeline class name (default: None)
             candles_pipeline_kwargs: Additional kwargs for candles pipeline (default: None)
         """
@@ -81,7 +141,7 @@ def register_backtesting_tools(mcp):
             exchange_type=exchange_type,
             hyperparameters=hyperparameters,
             include_trades=include_trades,
-            include_equity_curve=include_equity_curve,
+            include_equity_curve=False,  # REST API doesn't support this; we synthesize
             include_logs=include_logs,
             auto_import_candles=True,
             fast_mode=fast_mode,
@@ -97,6 +157,15 @@ def register_backtesting_tools(mcp):
                 "error_type": result.get("error_type", "BacktestError"),
                 "success": False,
             }
+
+        # Synthesize equity curve from trades if requested. Jesse's REST API
+        # does not propagate the `generate_equity_curve` flag, so we compute
+        # the running balance from the trade list. The curve is a list of
+        # `[timestamp_ms, balance]` pairs, matching Jesse's internal format.
+        if include_equity_curve:
+            result["equity_curve"] = _synthesize_equity_curve(
+                result, starting_balance
+            )
 
         return result
 
