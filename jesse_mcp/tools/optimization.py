@@ -75,6 +75,29 @@ def register_optimization_tools(mcp):
 
     @mcp.tool
     @tool_error_handler
+    async def get_optimization_session(
+        session_id: str,
+    ) -> Dict[str, Any]:
+        """
+        Poll an optimization session for results.
+
+        After calling optimize(), use this to check progress and retrieve results.
+        The session_id is returned by optimize().
+
+        Returns session status, completed trials, best score, best parameters,
+        and exception details if the session failed.
+
+        Common workflow:
+        1. optimize() -> get session_id
+        2. get_optimization_session(session_id) -> check status
+        3. Repeat step 2 until status != "running"
+        """
+        client = get_client()
+        result = await async_call(client.get_optimization_session, session_id)
+        return result
+
+    @mcp.tool
+    @tool_error_handler
     async def optimization_cancel(
         optimization_id: Optional[str] = None,
     ) -> Dict[str, Any]:
