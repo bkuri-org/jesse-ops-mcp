@@ -4,6 +4,8 @@ Backtest helper functions for Jesse REST API client.
 Contains utility functions for building payloads, validating results, etc.
 """
 
+import base64
+import json
 import logging
 import uuid
 from datetime import datetime
@@ -167,7 +169,7 @@ def build_backtest_payload(
         for route in formatted_routes:
             # type: ignore[assignment] — route is dict[str, str] by signature; we
             # need to extend it with a `dna` key for Jesse's dna-array protocol.
-            route["dna"] = dna  # type: ignore[index]
+            route["dna"] = base64.b64encode(json.dumps(dna).encode()).decode()  # type: ignore[index]
 
     formatted_data_routes = []
     if data_routes:
