@@ -24,14 +24,14 @@ logger = logging.getLogger("jesse-mcp.backtesting")
 
 def _synthesize_equity_curve(
     result: Dict[str, Any], starting_balance: float
-) -> List[List[float]]:
+) -> List[Dict[str, Any]]:
     """Build an equity curve from a backtest result's trade list.
 
     Jesse's REST API does not propagate the ``generate_equity_curve`` flag
     through to its backtest controller, so the JSON response from
     ``POST /backtest`` always contains an empty ``equity_curve`` list. This
-    helper reconstructs the running balance from the trade list, matching
-    Jesse's internal ``[timestamp_ms, balance]`` pair format.
+    helper reconstructs the running balance from the trade list in the
+    format expected by downstream consumers (risk_analyzer, testing_framework).
 
     Args:
         result: The backtest result dict, expected to contain a ``trades`` key
@@ -41,14 +41,16 @@ def _synthesize_equity_curve(
         starting_balance: Initial account balance to start the curve from.
 
     Returns:
-        A list of ``[timestamp_ms, balance]`` pairs sorted by time. Always
-        includes the starting balance at index 0 if there are no trades.
+        A list of dicts with ``{"date": ..., "return": pct, "equity": balance}``
+        sorted by time. Matches Jesse's native equity curve format.
     """
     trades = result.get("trades") or []
     if not trades:
         return []
 
-    points: List[List[float]] = []
+    from datetime import datetime, timezone as _tz
+
+    points: List[Dict[str, Any]] = []
     running_balance = float(starting_balance)
 
     # Sort by opened_at if available, else closed_at
@@ -70,8 +72,11 @@ def _synthesize_equity_curve(
         ts = trade_ts(trade)
         if ts <= 0:
             continue
+        prev_balance = running_balance
         running_balance += float(pnl)
-        points.append([float(ts), running_balance])
+        ret = (running_balance - prev_balance) / prev_balance if prev_balance != 0 else 0.0
+        date_str = datetime.fromtimestamp(ts / 1000, tz=_tz.utc).strftime("%Y-%m-%d")
+        points.append({"date": date_str, "return": round(ret, 6), "equity": round(running_balance, 2)})
 
     return points
 
