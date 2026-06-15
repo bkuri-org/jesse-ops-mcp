@@ -432,12 +432,53 @@ class Phase3Optimizer:
         start_dt = datetime.strptime(start_date, "%Y-%m-%d")
         end_dt = datetime.strptime(end_date, "%Y-%m-%d")
 
+        total_days = (end_dt - start_dt).days
+
+        # Auto-scale periods to fit the available date range.
+        # Default (365 in + 30 out = 395) causes immediate loop exit for
+        # shorter backtest windows.  We aim for at least 3 periods; if that
+        # isn't possible with the requested sizes, scale proportionally.
+        min_window = in_sample_period + out_sample_period
+        desired_periods = 3
+        needed = desired_periods * (min_window - step_forward) + step_forward
+
+        effective_in = in_sample_period
+        effective_out = out_sample_period
+        effective_step = step_forward
+
+        if needed > total_days and total_days >= 30:
+            scale = total_days / needed
+            effective_in = max(7, int(in_sample_period * scale))
+            effective_out = max(3, int(out_sample_period * scale))
+            effective_step = max(1, min(effective_step, effective_out))
+            logger.info(
+                f"Auto-scaled walk-forward windows: in={effective_in}d "
+                f"out={effective_out}d step={effective_step}d "
+                f"(requested {in_sample_period}d/{out_sample_period}d, "
+                f"available {total_days}d)"
+            )
+        elif total_days < 30:
+            return {
+                "strategy": strategy,
+                "symbol": symbol,
+                "timeframe": timeframe,
+                "start_date": start_date,
+                "end_date": end_date,
+                "periods": [],
+                "overall": {},
+                "error": (
+                    f"Insufficient date range ({total_days} days) for walk-forward "
+                    "analysis. Need at least 30 days."
+                ),
+                "execution_time": 0,
+            }
+
         results = []
         current_start = start_dt
 
         while current_start < end_dt:
-            in_sample_end = current_start + timedelta(days=in_sample_period)
-            out_sample_end = in_sample_end + timedelta(days=out_sample_period)
+            in_sample_end = current_start + timedelta(days=effective_in)
+            out_sample_end = in_sample_end + timedelta(days=effective_out)
 
             if out_sample_end > end_dt:
                 break
@@ -513,7 +554,7 @@ class Phase3Optimizer:
             )
 
             # Move window forward
-            current_start += timedelta(days=step_forward)
+            current_start += timedelta(days=effective_step)
 
         # Calculate overall statistics
         if results:
@@ -541,9 +582,12 @@ class Phase3Optimizer:
             "timeframe": timeframe,
             "start_date": start_date,
             "end_date": end_date,
-            "in_sample_period": in_sample_period,
-            "out_sample_period": out_sample_period,
-            "step_forward": step_forward,
+            "in_sample_period": effective_in,
+            "out_sample_period": effective_out,
+            "step_forward": effective_step,
+            "requested_in_sample_period": in_sample_period,
+            "requested_out_sample_period": out_sample_period,
+            "requested_step_forward": step_forward,
             "optimization_metric": metric,
             "periods": results,
             "overall": overall,
