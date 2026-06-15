@@ -155,6 +155,7 @@ class JesseWrapper:
         include_trades: bool = False,
         include_equity_curve: bool = False,
         include_logs: bool = False,
+        fast_mode: bool = True,
         benchmark: bool = False,
         candles_pipeline_class: Optional[str] = None,
         candles_pipeline_kwargs: Optional[Dict[str, Any]] = None,
@@ -187,13 +188,34 @@ class JesseWrapper:
         try:
             logger.info(f"Starting backtest: {strategy} on {symbol} ({timeframe})")
 
-            # Check if we have access to Jesse's research module (requires local installation)
+            # If local Jesse research module is unavailable, fall back to REST API
             if not JESSE_RESEARCH_AVAILABLE:
-                return {
-                    "error": "Backtest requires local Jesse research module",
-                    "detail": "This tool requires Jesse.research module which needs full Jesse installation. Use the Jesse REST API /backtest endpoint instead.",
-                    "success": False,
-                }
+                if JESSE_AVAILABLE:
+                    logger.info("Local Jesse research unavailable, using REST API fallback")
+                    return self._backtest_via_rest(
+                        strategy=strategy,
+                        symbol=symbol,
+                        timeframe=timeframe,
+                        start_date=start_date,
+                        end_date=end_date,
+                        exchange=exchange,
+                        starting_balance=starting_balance,
+                        fee=fee,
+                        leverage=leverage,
+                        exchange_type=exchange_type,
+                        hyperparameters=hyperparameters,
+                        include_trades=include_trades,
+                        fast_mode=fast_mode,
+                        benchmark=benchmark,
+                        candles_pipeline_class=candles_pipeline_class,
+                        candles_pipeline_kwargs=candles_pipeline_kwargs,
+                    )
+                else:
+                    return {
+                        "error": "Backtest requires local Jesse research module",
+                        "detail": "This tool requires Jesse.research module which needs full Jesse installation. Use the Jesse REST API /backtest endpoint instead.",
+                        "success": False,
+                    }
 
             # Format config for Jesse
             config = {
@@ -252,7 +274,7 @@ class JesseWrapper:
                 generate_trades=include_trades,
                 generate_logs=include_logs,
                 hyperparameters=hyperparameters,
-                fast_mode=True,
+                fast_mode=fast_mode,
                 benchmark=benchmark,
                 candles_pipeline_class=candles_pipeline_class,
                 candles_pipeline_kwargs=candles_pipeline_kwargs,
@@ -382,6 +404,79 @@ class JesseWrapper:
             logger.error(f"❌ Plot significance test failed: {e}")
             logger.error(traceback.format_exc())
             return {"error": str(e), "error_type": type(e).__name__, "success": False}
+
+    def _backtest_via_rest(
+        self,
+        strategy: str,
+        symbol: str,
+        timeframe: str,
+        start_date: str,
+        end_date: str,
+        exchange: str = "Binance",
+        starting_balance: float = 10000,
+        fee: float = 0.001,
+        leverage: float = 1,
+        exchange_type: str = "futures",
+        hyperparameters: Optional[Dict[str, Any]] = None,
+        include_trades: bool = False,
+        fast_mode: bool = True,
+        benchmark: bool = False,
+        candles_pipeline_class: Optional[str] = None,
+        candles_pipeline_kwargs: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Run a backtest via the Jesse REST API as fallback when local research module is unavailable."""
+        try:
+            from jesse_mcp.core.rest import get_jesse_rest_client
+
+            client = get_jesse_rest_client()
+
+            routes = [{"strategy": strategy, "symbol": symbol, "timeframe": timeframe}]
+            result = client.backtest(
+                routes=routes,
+                start_date=start_date,
+                end_date=end_date,
+                exchange=exchange,
+                starting_balance=starting_balance,
+                fee=fee,
+                leverage=leverage,
+                exchange_type=exchange_type,
+                hyperparameters=hyperparameters,
+                include_trades=include_trades,
+                fast_mode=fast_mode,
+                benchmark=benchmark,
+                candles_pipeline_class=candles_pipeline_class,
+                candles_pipeline_kwargs=candles_pipeline_kwargs,
+            )
+            logger.info(f"✅ REST API backtest complete: {result.get('total_trades', 0)} trades")
+            return result
+        except Exception as e:
+            logger.error(f"❌ REST API backtest failed: {e}")
+            return {"error": str(e), "error_type": type(e).__name__, "success": False}
+
+    def _import_candles_via_rest(
+        self,
+        exchange: str,
+        symbol: str,
+        start_date: str,
+        end_date: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Import candles via the Jesse REST API as fallback when local research module is unavailable."""
+        try:
+            from jesse_mcp.core.rest import get_jesse_rest_client
+
+            client = get_jesse_rest_client()
+            result = client.import_candles(
+                exchange=exchange,
+                symbol=symbol,
+                timeframe="1D",
+                start_date=start_date,
+                end_date=end_date,
+            )
+            logger.info(f"✅ REST API candle import complete")
+            return result
+        except Exception as e:
+            logger.error(f"❌ REST API candle import failed: {e}")
+            return {"success": False, "error": str(e)}
 
     def list_strategies(self, include_test_strategies: bool = False) -> Dict[str, Any]:
         """
@@ -657,13 +752,22 @@ class JesseWrapper:
         try:
             logger.info(f"Importing candles: {exchange} {symbol} from {start_date}")
 
-            # Check if we have access to Jesse's research module (requires local installation)
+            # If local Jesse research module is unavailable, fall back to REST API
             if not JESSE_RESEARCH_AVAILABLE:
-                return {
-                    "error": "Import candles requires local Jesse research module",
-                    "detail": "This tool requires Jesse.research module which needs full Jesse installation. Use the Jesse REST API /exchange/import-candles endpoint instead.",
-                    "success": False,
-                }
+                if JESSE_AVAILABLE:
+                    logger.info("Local Jesse research unavailable, using REST API fallback for import_candles")
+                    return self._import_candles_via_rest(
+                        exchange=exchange,
+                        symbol=symbol,
+                        start_date=start_date,
+                        end_date=end_date,
+                    )
+                else:
+                    return {
+                        "error": "Import candles requires local Jesse research module",
+                        "detail": "This tool requires Jesse.research module which needs full Jesse installation. Use the Jesse REST API /exchange/import-candles endpoint instead.",
+                        "success": False,
+                    }
 
             result = research.import_candles(
                 exchange=exchange,
