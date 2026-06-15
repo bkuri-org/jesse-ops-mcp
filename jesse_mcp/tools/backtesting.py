@@ -65,7 +65,8 @@ def _synthesize_equity_curve(
 
     sorted_trades = sorted(trades, key=trade_ts)
     for trade in sorted_trades:
-        pnl = trade.get("pnl")
+        # Jesse REST API uses uppercase PNL; local research uses lowercase pnl
+        pnl = trade.get("pnl") or trade.get("PNL") or trade.get("profit")
         if pnl is None:
             # Some trade formats use pnl_percentage; skip if no absolute pnl
             continue
