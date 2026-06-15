@@ -434,6 +434,23 @@ class Phase3Optimizer:
 
         total_days = (end_dt - start_dt).days
 
+        # Reject non-positive period inputs
+        if in_sample_period <= 0 or out_sample_period <= 0 or step_forward <= 0:
+            return {
+                "strategy": strategy,
+                "symbol": symbol,
+                "timeframe": timeframe,
+                "start_date": start_date,
+                "end_date": end_date,
+                "periods": [],
+                "overall": {},
+                "error": (
+                    "Walk-forward periods must be positive integers: "
+                    "in_sample_period, out_sample_period, step_forward."
+                ),
+                "execution_time": 0,
+            }
+
         # Auto-scale periods to fit the available date range.
         # Default (365 in + 30 out = 395) causes immediate loop exit for
         # shorter backtest windows.  We aim for at least 3 periods; if that
