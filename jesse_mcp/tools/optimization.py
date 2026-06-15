@@ -25,6 +25,48 @@ from jesse_mcp.tools._utils import (
 logger = logging.getLogger("jesse-mcp.optimization")
 
 
+async def _local_optimize_fallback(
+    strategy: str,
+    symbol: str,
+    timeframe: str,
+    start_date: str,
+    end_date: str,
+    param_space: Dict[str, Any],
+    metric: str = "total_return",
+    n_trials: int = 50,
+    exchange: str = "Binance Spot",
+    starting_balance: float = 10000,
+    fee: float = 0.001,
+    leverage: float = 1,
+    exchange_type: str = "spot",
+) -> Dict[str, Any]:
+    """Fall back to local Optuna optimizer when the Jesse REST API fails.
+
+    This wraps Phase3Optimizer (which drives Optuna + Jesse research
+    backtest) so that each trial failure is caught individually instead
+    of crashing the entire optimization session.  Used primarily for ML
+    strategies that raise unhandled exceptions inside Ray workers.
+    """
+    from jesse_mcp.tools._utils import require_optimizer
+
+    optimizer = require_optimizer()
+    return await optimizer.optimize(
+        strategy=strategy,
+        symbol=symbol,
+        timeframe=timeframe,
+        start_date=start_date,
+        end_date=end_date,
+        param_space=param_space,
+        metric=metric,
+        n_trials=n_trials,
+        exchange=exchange,
+        starting_balance=starting_balance,
+        fee=fee,
+        leverage=leverage,
+        exchange_type=exchange_type,
+    )
+
+
 def register_optimization_tools(mcp):
     """Register optimization tools with the MCP server."""
 
@@ -58,20 +100,49 @@ def register_optimization_tools(mcp):
         Returns best parameters found and their performance metrics.
         """
         client = get_client()
-        result = client.optimization(
-            strategy=strategy,
-            symbol=symbol,
-            timeframe=timeframe,
-            start_date=start_date,
-            end_date=end_date,
-            param_space=param_space,
-            exchange=exchange,
-            starting_balance=starting_balance,
-            fee=fee,
-            leverage=leverage,
-            exchange_type=exchange_type,
-        )
-        return result
+        try:
+            result = client.optimization(
+                strategy=strategy,
+                symbol=symbol,
+                timeframe=timeframe,
+                start_date=start_date,
+                end_date=end_date,
+                param_space=param_space,
+                exchange=exchange,
+                starting_balance=starting_balance,
+                fee=fee,
+                leverage=leverage,
+                exchange_type=exchange_type,
+            )
+            return result
+        except Exception as e:
+            err_msg = str(e).lower()
+            # The Jesse REST API returns HTTP 500 for strategies whose
+            # execute() crashes inside Ray (e.g. ML strategies with no
+            # trained model).  Fall back to the local Optuna-based
+            # optimizer which wraps Jesse's research backtest directly
+            # and handles errors per-trial instead of failing the whole
+            # session.
+            if "500" in err_msg or "ray" in err_msg or "internal server error" in err_msg:
+                logger.warning(
+                    f"REST optimization failed ({e}); falling back to local Optuna optimizer"
+                )
+                return await _local_optimize_fallback(
+                    strategy=strategy,
+                    symbol=symbol,
+                    timeframe=timeframe,
+                    start_date=start_date,
+                    end_date=end_date,
+                    param_space=param_space,
+                    metric=metric,
+                    n_trials=min(n_trials, 50),  # cap trials for speed
+                    exchange=exchange,
+                    starting_balance=starting_balance,
+                    fee=fee,
+                    leverage=leverage,
+                    exchange_type=exchange_type,
+                )
+            raise
 
     @mcp.tool
     @tool_error_handler
