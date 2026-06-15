@@ -145,8 +145,9 @@ def register_risk_tools(mcp):
         # Confidence intervals on final value
         ci: Dict[str, Dict[str, float]] = {}
         for level in confidence_levels:
-            lo = round(float(np.percentile(fv_arr, (1 - level) * 100)), 2)
-            hi = round(float(np.percentile(fv_arr, level * 100)), 2)
+            alpha = (1 - level) / 2
+            lo = round(float(np.percentile(fv_arr, alpha * 100)), 2)
+            hi = round(float(np.percentile(fv_arr, (1 - alpha) * 100)), 2)
             ci[f"{level * 100:.0f}%"] = {"lower": lo, "upper": hi}
         result["confidence_intervals"] = ci
 
@@ -311,6 +312,9 @@ def _extract_returns(raw_curve: List[Any]) -> List[float]:
 def _block_bootstrap(returns: List[float], block_size: int) -> List[float]:
     """Block bootstrap: sample blocks of size `block_size` to preserve local order."""
     n = len(returns)
+    block_size = min(block_size, n)
+    if block_size < 1:
+        block_size = 1
     sampled: List[float] = []
     while len(sampled) < n:
         start = np.random.randint(0, n - block_size + 1)
