@@ -156,29 +156,47 @@ def _register_all_tools():
     from jesse_mcp.tools.jesse_trade import register_jesse_trade_tools
     from jesse_mcp.tools.ml import register_ml_tools
 
-    register_backtesting_tools(mcp)
-    logger.info("✅ Backtesting tools registered")
+    # Temporarily patch mcp.tool to force output_schema=None on all tools.
+    # This prevents MCP SDK "outputSchema defined but no structured output
+    # returned" errors.  FastMCP auto-generates an output schema from the
+    # -> Dict[str, Any] return annotation; the MCP lowlevel server then
+    # validates every result against that schema.  Complex / nested return
+    # values can fail that validation or lose structured content during
+    # serialisation, so we disable it entirely.
+    _original_tool = mcp.tool
 
-    register_strategy_tools(mcp)
-    logger.info("✅ Strategy tools registered")
+    def _tool_no_output_schema(*args, **kwargs):
+        if "output_schema" not in kwargs:
+            kwargs["output_schema"] = None
+        return _original_tool(*args, **kwargs)
 
-    register_optimization_tools(mcp)
-    logger.info("✅ Optimization tools registered")
+    mcp.tool = _tool_no_output_schema
+    try:
+        register_backtesting_tools(mcp)
+        logger.info("✅ Backtesting tools registered")
 
-    register_risk_tools(mcp)
-    logger.info("✅ Risk tools registered")
+        register_strategy_tools(mcp)
+        logger.info("✅ Strategy tools registered")
 
-    register_pairs_tools(mcp)
-    logger.info("✅ Pairs tools registered")
+        register_optimization_tools(mcp)
+        logger.info("✅ Optimization tools registered")
 
-    register_live_tools(mcp)
-    logger.info("✅ Live trading tools registered")
+        register_risk_tools(mcp)
+        logger.info("✅ Risk tools registered")
 
-    register_jesse_trade_tools(mcp)
-    logger.info("✅ jesse.trade community tools registered")
+        register_pairs_tools(mcp)
+        logger.info("✅ Pairs tools registered")
 
-    register_ml_tools(mcp)
-    logger.info("✅ ML tools registered")
+        register_live_tools(mcp)
+        logger.info("✅ Live trading tools registered")
+
+        register_jesse_trade_tools(mcp)
+        logger.info("✅ jesse.trade community tools registered")
+
+        register_ml_tools(mcp)
+        logger.info("✅ ML tools registered")
+    finally:
+        mcp.tool = _original_tool
 
 
 # ==================== MAIN ENTRY POINT ====================
@@ -191,6 +209,15 @@ def main():
     _initialize_dependencies()
     _register_all_tools()
 
+    # Re-apply the output_schema=None patch for agent tools
+    _orig = mcp.tool
+
+    def _tool_no_schema(*args, **kwargs):
+        if "output_schema" not in kwargs:
+            kwargs["output_schema"] = None
+        return _orig(*args, **kwargs)
+
+    mcp.tool = _tool_no_schema
     try:
         from jesse_mcp.agent_tools import register_agent_tools
 
@@ -198,6 +225,8 @@ def main():
         logger.info("✅ Agent tools registered")
     except Exception as e:
         logger.warning(f"⚠️  Agent tools registration failed: {e}")
+    finally:
+        mcp.tool = _orig
 
     parser = argparse.ArgumentParser(description="Jesse MCP Server - Quantitative Trading Analysis")
     parser.add_argument(

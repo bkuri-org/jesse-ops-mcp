@@ -157,7 +157,7 @@ def build_optimization_payload(
         "training_finish_date": end_date,
         # testing window: 30 days immediately after training end
         "testing_start_date": end_date,
-        "testing_finish_date": _add_days(end_date, 30),
+        "testing_finish_date": min(_add_days(end_date, 30), (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")),
         "optimal_total": n_trials,
         "fast_mode": False,
         "cpu_cores": 1,
