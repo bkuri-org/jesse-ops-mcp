@@ -404,10 +404,15 @@ class Phase3Optimizer:
         step_forward: int = 7,
         param_space: Dict[str, Dict[str, Any]] = None,
         metric: str = "total_return",
+        max_concurrent_periods: int = 3,
         **kwargs,
     ) -> Dict[str, Any]:
         """
-        Perform walk-forward analysis to detect overfitting
+        Perform walk-forward analysis to detect overfitting.
+
+        Periods run concurrently (up to max_concurrent_periods) using async
+        HTTP backtests via httpx.  Each period is independent — the in-sample
+        window for period N does not depend on results from period N-1.
 
         Args:
             strategy: Strategy name
@@ -420,6 +425,9 @@ class Phase3Optimizer:
             step_forward: Days to move window forward
             param_space: Parameter space for optimization
             metric: Optimization metric
+            max_concurrent_periods: Max parallel walk-forward windows (default 3).
+                Jesse's dashboard handles one backtest at a time, so concurrency
+                is limited by how many sessions it can queue.
             **kwargs: Additional backtest parameters
 
         Returns:
@@ -447,6 +455,22 @@ class Phase3Optimizer:
                 "error": (
                     "Walk-forward periods must be positive integers: "
                     "in_sample_period, out_sample_period, step_forward."
+                ),
+                "execution_time": 0,
+            }
+
+        # Validate max_concurrent_periods (0 deadlocks, negative raises ValueError)
+        if max_concurrent_periods < 1:
+            return {
+                "strategy": strategy,
+                "symbol": symbol,
+                "timeframe": timeframe,
+                "start_date": start_date,
+                "end_date": end_date,
+                "periods": [],
+                "overall": {},
+                "error": (
+                    f"max_concurrent_periods must be >= 1, got {max_concurrent_periods}."
                 ),
                 "execution_time": 0,
             }
@@ -490,9 +514,10 @@ class Phase3Optimizer:
                 "execution_time": 0,
             }
 
-        results = []
+        # Pre-compute all period windows
+        windows = []
         current_start = start_dt
-
+        period_idx = 0
         while current_start < end_dt:
             in_sample_end = current_start + timedelta(days=effective_in)
             out_sample_end = in_sample_end + timedelta(days=effective_out)
@@ -500,66 +525,140 @@ class Phase3Optimizer:
             if out_sample_end > end_dt:
                 break
 
-            # Optimize on in-sample period
-            logger.info(f"Optimizing {current_start.date()} to {in_sample_end.date()}")
+            windows.append({
+                "period": period_idx + 1,
+                "in_start": current_start.strftime("%Y-%m-%d"),
+                "in_end": in_sample_end.strftime("%Y-%m-%d"),
+                "out_end": out_sample_end.strftime("%Y-%m-%d"),
+            })
+            period_idx += 1
+            current_start += timedelta(days=effective_step)
 
-            if param_space:
-                optimization = await self.optimize(
-                    strategy,
-                    symbol,
-                    timeframe,
-                    current_start.strftime("%Y-%m-%d"),
-                    in_sample_end.strftime("%Y-%m-%d"),
-                    param_space,
-                    metric=metric,
-                    n_trials=20,
-                    **kwargs,
+        if not windows:
+            return {
+                "strategy": strategy,
+                "symbol": symbol,
+                "timeframe": timeframe,
+                "start_date": start_date,
+                "end_date": end_date,
+                "in_sample_period": effective_in,
+                "out_sample_period": effective_out,
+                "step_forward": effective_step,
+                "optimization_metric": metric,
+                "periods": [],
+                "overall": {},
+                "execution_time": 0,
+                "use_mock": self.use_mock,
+            }
+
+        logger.info(
+            f"Walk-forward: {len(windows)} periods, "
+            f"max_concurrent={max_concurrent_periods}, "
+            f"param_space={'yes' if param_space else 'no'}"
+        )
+
+        # Process periods concurrently with a semaphore
+        semaphore = asyncio.Semaphore(max_concurrent_periods)
+
+        async def run_period(w):
+            async with semaphore:
+                p_num = w["period"]
+                in_start = w["in_start"]
+                in_end = w["in_end"]
+                out_end = w["out_end"]
+
+                logger.info(
+                    f"[P{p_num}] In-sample: {in_start} → {in_end}"
                 )
-                best_params = optimization["best_parameters"]
-                in_sample_result = optimization["final_backtest"]
-            else:
-                # Use default parameters
-                in_sample_result = self.wrapper.backtest(
-                    strategy,
-                    symbol,
-                    timeframe,
-                    current_start.strftime("%Y-%m-%d"),
-                    in_sample_end.strftime("%Y-%m-%d"),
-                    **kwargs,
-                )
+
                 best_params = {}
+                in_sample_result = {}
+                if param_space:
+                    optimization = await self.optimize(
+                        strategy,
+                        symbol,
+                        timeframe,
+                        in_start,
+                        in_end,
+                        param_space,
+                        metric=metric,
+                        n_trials=20,
+                        **kwargs,
+                    )
+                    if optimization.get("error") or optimization.get("success") is False:
+                        return {
+                            "period": p_num,
+                            "error": optimization.get("error", "Optimization failed"),
+                            "in_sample_start": in_start,
+                            "in_sample_end": in_end,
+                            "out_sample_start": in_end,
+                            "out_sample_end": out_end,
+                            "in_sample_metric": 0,
+                            "out_sample_metric": 0,
+                            "degradation": 0,
+                            "degradation_percent": 0,
+                        }
+                    best_params = optimization.get("best_parameters", {})
+                    in_sample_result = optimization.get("final_backtest", {})
+                else:
+                    in_sample_result = await self.wrapper.async_backtest(
+                        strategy, symbol, timeframe, in_start, in_end, **kwargs,
+                    )
+                    if in_sample_result.get("error") or in_sample_result.get("success") is False:
+                        return {
+                            "period": p_num,
+                            "error": in_sample_result.get("error", "In-sample backtest failed"),
+                            "in_sample_start": in_start,
+                            "in_sample_end": in_end,
+                            "out_sample_start": in_end,
+                            "out_sample_end": out_end,
+                            "in_sample_metric": 0,
+                            "out_sample_metric": 0,
+                            "degradation": 0,
+                            "degradation_percent": 0,
+                        }
 
-            # Validate on out-sample period
-            logger.info(f"Validating {in_sample_end.date()} to {out_sample_end.date()}")
-
-            out_sample_result = self.wrapper.backtest(
-                strategy,
-                symbol,
-                timeframe,
-                in_sample_end.strftime("%Y-%m-%d"),
-                out_sample_end.strftime("%Y-%m-%d"),
-                hyperparameters=best_params,
-                **kwargs,
-            )
-
-            # Calculate degradation
-            in_sample_metric = in_sample_result.get(metric, 0)
-            out_sample_metric = out_sample_result.get(metric, 0)
-
-            if in_sample_metric != 0:
-                degradation = (out_sample_metric - in_sample_metric) / abs(
-                    in_sample_metric
+                logger.info(
+                    f"[P{p_num}] Out-sample: {in_end} → {out_end}"
                 )
-            else:
-                degradation = 0
 
-            results.append(
-                {
-                    "period": len(results) + 1,
-                    "in_sample_start": current_start.strftime("%Y-%m-%d"),
-                    "in_sample_end": in_sample_end.strftime("%Y-%m-%d"),
-                    "out_sample_start": in_sample_end.strftime("%Y-%m-%d"),
-                    "out_sample_end": out_sample_end.strftime("%Y-%m-%d"),
+                out_sample_result = await self.wrapper.async_backtest(
+                    strategy, symbol, timeframe, in_end, out_end,
+                    hyperparameters=best_params, **kwargs,
+                )
+                if out_sample_result.get("error") or out_sample_result.get("success") is False:
+                    return {
+                        "period": p_num,
+                        "error": out_sample_result.get("error", "Out-sample backtest failed"),
+                        "in_sample_start": in_start,
+                        "in_sample_end": in_end,
+                        "out_sample_start": in_end,
+                        "out_sample_end": out_end,
+                        "in_sample_result": in_sample_result,
+                        "best_parameters": best_params,
+                        "in_sample_metric": 0,
+                        "out_sample_metric": 0,
+                        "degradation": 0,
+                        "degradation_percent": 0,
+                    }
+
+                # Calculate degradation
+                in_sample_metric = in_sample_result.get(metric, 0)
+                out_sample_metric = out_sample_result.get(metric, 0)
+
+                if in_sample_metric != 0:
+                    degradation = (
+                        (out_sample_metric - in_sample_metric) / abs(in_sample_metric)
+                    )
+                else:
+                    degradation = 0
+
+                return {
+                    "period": p_num,
+                    "in_sample_start": in_start,
+                    "in_sample_end": in_end,
+                    "out_sample_start": in_end,
+                    "out_sample_end": out_end,
                     "best_parameters": best_params,
                     "in_sample_result": in_sample_result,
                     "out_sample_result": out_sample_result,
@@ -568,26 +667,55 @@ class Phase3Optimizer:
                     "degradation": degradation,
                     "degradation_percent": round(degradation * 100, 2),
                 }
-            )
 
-            # Move window forward
-            current_start += timedelta(days=effective_step)
+        results = await asyncio.gather(
+            *(run_period(w) for w in windows), return_exceptions=True
+        )
+
+        # Filter out exceptions, log them
+        clean_results = []
+        for i, r in enumerate(results):
+            if isinstance(r, Exception):
+                logger.error(f"[P{i+1}] Period failed: {r}")
+                clean_results.append({
+                    "period": i + 1,
+                    "error": str(r),
+                    "in_sample_metric": 0,
+                    "out_sample_metric": 0,
+                    "degradation": 0,
+                    "degradation_percent": 0,
+                })
+            else:
+                clean_results.append(r)
+
+        # Sort by period number (gather may return out of order)
+        clean_results.sort(key=lambda x: x["period"])
 
         # Calculate overall statistics
-        if results:
-            avg_degradation = np.mean([r["degradation"] for r in results])
-            std_degradation = np.std([r["degradation"] for r in results])
-            positive_periods = len([r for r in results if r["out_sample_metric"] > 0])
+        if clean_results:
+            valid = [r for r in clean_results if "error" not in r]
+            if valid:
+                avg_degradation = np.mean([r["degradation"] for r in valid])
+                std_degradation = np.std([r["degradation"] for r in valid])
+                positive_periods = len(
+                    [r for r in valid if r["out_sample_metric"] > 0]
+                )
 
-            overall = {
-                "total_periods": len(results),
-                "positive_periods": positive_periods,
-                "positive_period_rate": round(positive_periods / len(results), 4),
-                "average_degradation": round(avg_degradation, 4),
-                "std_degradation": round(std_degradation, 4),
-                "overfitting_indicator": avg_degradation
-                < -0.2,  # 20%+ degradation suggests overfitting
-            }
+                overall = {
+                    "total_periods": len(clean_results),
+                    "successful_periods": len(valid),
+                    "positive_periods": positive_periods,
+                    "positive_period_rate": round(positive_periods / len(valid), 4),
+                    "average_degradation": round(avg_degradation, 4),
+                    "std_degradation": round(std_degradation, 4),
+                    "overfitting_indicator": bool(avg_degradation < -0.2),
+                }
+            else:
+                overall = {
+                    "total_periods": len(clean_results),
+                    "successful_periods": 0,
+                    "error": "All periods failed",
+                }
         else:
             overall = {}
 
@@ -606,7 +734,7 @@ class Phase3Optimizer:
             "requested_out_sample_period": out_sample_period,
             "requested_step_forward": step_forward,
             "optimization_metric": metric,
-            "periods": results,
+            "periods": clean_results,
             "overall": overall,
             "execution_time": round(execution_time, 2),
             "use_mock": self.use_mock,

@@ -6,6 +6,7 @@ the full Jesse framework to be installed. This enables development and testing
 of Phase 3 optimization tools without complex dependencies.
 """
 
+import asyncio
 import random
 import time
 import numpy as np
@@ -110,6 +111,24 @@ class MockJesseWrapper:
             "ending_balance": round(10000 * (1 + total_return), 2),
             "execution_time": round(np.random.uniform(0.5, 2.0), 2),
         }
+
+    async def async_backtest(
+        self,
+        strategy_name: str,
+        symbol: str,
+        timeframe: str,
+        start_date: str,
+        end_date: str,
+        **kwargs,
+    ) -> Dict[str, Any]:
+        """Async mock backtest — delegates to sync backtest in executor."""
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            None,
+            lambda: self.backtest(
+                strategy_name, symbol, timeframe, start_date, end_date, **kwargs
+            ),
+        )
 
     def list_strategies(self) -> List[str]:
         """Return list of available mock strategies"""

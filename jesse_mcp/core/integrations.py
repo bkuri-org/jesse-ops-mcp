@@ -448,10 +448,124 @@ class JesseWrapper:
                 candles_pipeline_kwargs=candles_pipeline_kwargs,
             )
             logger.info(f"✅ REST API backtest complete: {result.get('total_trades', 0)} trades")
+
+            # The Jesse REST API may return an empty equity_curve list.
+            # Synthesize it from trades when trades are available.
+            if "error" not in result and result.get("trades"):
+                existing_ec = result.get("equity_curve", [])
+                if not existing_ec:
+                    result["equity_curve"] = self._synthesize_equity_curve(
+                        result["trades"], starting_balance
+                    )
+
             return result
         except Exception as e:
             logger.error(f"❌ REST API backtest failed: {e}")
             return {"error": str(e), "error_type": type(e).__name__, "success": False}
+
+    @staticmethod
+    def _synthesize_equity_curve(
+        trades: list, starting_balance: float
+    ) -> list:
+        """Build an equity curve from a flat trade list.
+
+        Each trade is expected to have at least ``pnl`` (profit-and-loss)
+        in the same format that the Jesse REST API returns.  The output
+        format matches
+        ``jesse_mcp.tools.backtesting._synthesize_equity_curve`` so that
+        the downstream monte_carlo tool can consume it without changes.
+        """
+        curve = []
+        balance = starting_balance
+        for t in trades:
+            # Jesse REST API uses uppercase PNL; local research uses lowercase pnl
+            pnl = t.get("pnl", t.get("PNL", t.get("profit", 0)))
+            balance += pnl
+            dt = t.get("closed_at", t.get("exit_date", ""))
+            ret = pnl / (balance - pnl) if (balance - pnl) != 0 else 0.0
+            curve.append({
+                "date": dt,
+                "return": ret,
+                "equity": balance,
+            })
+        return curve
+
+    async def async_backtest(
+        self,
+        strategy: str,
+        symbol: str,
+        timeframe: str,
+        start_date: str,
+        end_date: str,
+        exchange: str = "Binance",
+        starting_balance: float = 10000,
+        fee: float = 0.001,
+        leverage: float = 1,
+        exchange_type: str = "futures",
+        hyperparameters: Optional[Dict[str, Any]] = None,
+        include_trades: bool = False,
+        fast_mode: bool = True,
+        benchmark: bool = False,
+        candles_pipeline_class: Optional[str] = None,
+        candles_pipeline_kwargs: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Run a backtest asynchronously via Jesse REST API (httpx).
+
+        This is the async counterpart of self.backtest(), designed for
+        concurrent execution in walk-forward analysis. Falls back to
+        the synchronous wrapper if httpx is unavailable.
+        """
+        if not JESSE_AVAILABLE:
+            return {
+                "error": "Backtest requires Jesse API",
+                "success": False,
+            }
+
+        # Local research module unavailable → REST API (the common path)
+        if not JESSE_RESEARCH_AVAILABLE:
+            try:
+                from jesse_mcp.core.rest import get_jesse_rest_client
+
+                client = get_jesse_rest_client()
+                routes = [{"strategy": strategy, "symbol": symbol, "timeframe": timeframe}]
+                result = await client.async_backtest(
+                    routes=routes,
+                    start_date=start_date,
+                    end_date=end_date,
+                    exchange=exchange,
+                    starting_balance=starting_balance,
+                    fee=fee,
+                    leverage=leverage,
+                    exchange_type=exchange_type,
+                    hyperparameters=hyperparameters,
+                    include_trades=include_trades,
+                    fast_mode=fast_mode,
+                    benchmark=benchmark,
+                    candles_pipeline_class=candles_pipeline_class,
+                    candles_pipeline_kwargs=candles_pipeline_kwargs,
+                )
+                return result
+            except Exception as e:
+                logger.error(f"❌ Async REST backtest failed: {e}")
+                return {"error": str(e), "error_type": type(e).__name__, "success": False}
+
+        # Local research available — run in executor to avoid blocking
+        import asyncio
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, lambda: self.backtest(
+            strategy, symbol, timeframe, start_date, end_date,
+            exchange=exchange,
+            starting_balance=starting_balance,
+            fee=fee,
+            leverage=leverage,
+            exchange_type=exchange_type,
+            hyperparameters=hyperparameters,
+            include_trades=include_trades,
+            fast_mode=fast_mode,
+            benchmark=benchmark,
+            candles_pipeline_class=candles_pipeline_class,
+            candles_pipeline_kwargs=candles_pipeline_kwargs,
+        ))
 
     def _import_candles_via_rest(
         self,

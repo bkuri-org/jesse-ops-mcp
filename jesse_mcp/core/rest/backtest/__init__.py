@@ -8,6 +8,7 @@ Submodules:
 """
 
 from jesse_mcp.core.rest.backtest.api import (
+    async_execute_backtest,
     cancel_backtest,
     execute_backtest,
     get_backtest_session_result,
@@ -27,6 +28,7 @@ from jesse_mcp.core.rest.backtest.wrappers import (
 )
 
 __all__ = [
+    "async_execute_backtest",
     "cancel_backtest",
     "execute_backtest",
     "get_backtest_session_result",
