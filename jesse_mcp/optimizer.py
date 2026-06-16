@@ -459,6 +459,22 @@ class Phase3Optimizer:
                 "execution_time": 0,
             }
 
+        # Validate max_concurrent_periods (0 deadlocks, negative raises ValueError)
+        if max_concurrent_periods < 1:
+            return {
+                "strategy": strategy,
+                "symbol": symbol,
+                "timeframe": timeframe,
+                "start_date": start_date,
+                "end_date": end_date,
+                "periods": [],
+                "overall": {},
+                "error": (
+                    f"max_concurrent_periods must be >= 1, got {max_concurrent_periods}."
+                ),
+                "execution_time": 0,
+            }
+
         # Auto-scale periods to fit the available date range.
         # Default (365 in + 30 out = 395) causes immediate loop exit for
         # shorter backtest windows.  We aim for at least 3 periods; if that
@@ -556,6 +572,7 @@ class Phase3Optimizer:
                 )
 
                 best_params = {}
+                in_sample_result = {}
                 if param_space:
                     optimization = await self.optimize(
                         strategy,
@@ -568,12 +585,38 @@ class Phase3Optimizer:
                         n_trials=20,
                         **kwargs,
                     )
+                    if optimization.get("error") or optimization.get("success") is False:
+                        return {
+                            "period": p_num,
+                            "error": optimization.get("error", "Optimization failed"),
+                            "in_sample_start": in_start,
+                            "in_sample_end": in_end,
+                            "out_sample_start": in_end,
+                            "out_sample_end": out_end,
+                            "in_sample_metric": 0,
+                            "out_sample_metric": 0,
+                            "degradation": 0,
+                            "degradation_percent": 0,
+                        }
                     best_params = optimization.get("best_parameters", {})
                     in_sample_result = optimization.get("final_backtest", {})
                 else:
                     in_sample_result = await self.wrapper.async_backtest(
                         strategy, symbol, timeframe, in_start, in_end, **kwargs,
                     )
+                    if in_sample_result.get("error") or in_sample_result.get("success") is False:
+                        return {
+                            "period": p_num,
+                            "error": in_sample_result.get("error", "In-sample backtest failed"),
+                            "in_sample_start": in_start,
+                            "in_sample_end": in_end,
+                            "out_sample_start": in_end,
+                            "out_sample_end": out_end,
+                            "in_sample_metric": 0,
+                            "out_sample_metric": 0,
+                            "degradation": 0,
+                            "degradation_percent": 0,
+                        }
 
                 logger.info(
                     f"[P{p_num}] Out-sample: {in_end} → {out_end}"
@@ -583,6 +626,21 @@ class Phase3Optimizer:
                     strategy, symbol, timeframe, in_end, out_end,
                     hyperparameters=best_params, **kwargs,
                 )
+                if out_sample_result.get("error") or out_sample_result.get("success") is False:
+                    return {
+                        "period": p_num,
+                        "error": out_sample_result.get("error", "Out-sample backtest failed"),
+                        "in_sample_start": in_start,
+                        "in_sample_end": in_end,
+                        "out_sample_start": in_end,
+                        "out_sample_end": out_end,
+                        "in_sample_result": in_sample_result,
+                        "best_parameters": best_params,
+                        "in_sample_metric": 0,
+                        "out_sample_metric": 0,
+                        "degradation": 0,
+                        "degradation_percent": 0,
+                    }
 
                 # Calculate degradation
                 in_sample_metric = in_sample_result.get(metric, 0)
@@ -650,8 +708,7 @@ class Phase3Optimizer:
                     "positive_period_rate": round(positive_periods / len(valid), 4),
                     "average_degradation": round(avg_degradation, 4),
                     "std_degradation": round(std_degradation, 4),
-                    "overfitting_indicator": avg_degradation
-                    < -0.2,  # 20%+ degradation suggests overfitting
+                    "overfitting_indicator": bool(avg_degradation < -0.2),
                 }
             else:
                 overall = {

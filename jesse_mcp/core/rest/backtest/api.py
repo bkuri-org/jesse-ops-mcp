@@ -209,7 +209,7 @@ def get_backtest_session_result(
         }
 
         logger.info(
-            f"✅ Retrieved backtest result: return={result['total_return']:.2f}%, "
+            f"✅ Retrieved backtest result: return={_format_total_return(result.get('total_return'))}, "
             f"sharpe={result.get('sharpe_ratio', 'N/A')}"
         )
         return result
@@ -285,6 +285,11 @@ def execute_backtest(
         )
 
     return result
+
+
+def _format_total_return(value):
+    """Format total_return for logging, guarding against null/non-numeric."""
+    return f"{float(value):.2f}%" if isinstance(value, (int, float)) else "N/A"
 
 
 # ---------------------------------------------------------------------------
@@ -367,6 +372,13 @@ async def async_poll_backtest_result(
             await asyncio.sleep(poll_interval)
 
         except Exception as e:
+            status_code = getattr(getattr(e, "response", None), "status_code", None)
+            if status_code is not None and 400 <= status_code < 500:
+                logger.error(f"Polling failed with HTTP {status_code}: {e}")
+                return {
+                    "error": f"Polling failed with HTTP {status_code}",
+                    "success": False,
+                }
             logger.warning(f"Error polling backtest status: {e}")
             await asyncio.sleep(poll_interval)
 
@@ -448,7 +460,7 @@ async def async_get_backtest_session_result(
         }
 
         logger.info(
-            f"✅ Retrieved backtest result: return={result['total_return']:.2f}%, "
+            f"✅ Retrieved backtest result: return={_format_total_return(result.get('total_return'))}, "
             f"sharpe={result.get('sharpe_ratio', 'N/A')}"
         )
         return result

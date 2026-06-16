@@ -236,15 +236,19 @@ class JesseRESTClient:
                 if self.auth_token:
                     headers["authorization"] = self.auth_token
 
-                # Build payload (reuse sync helpers)
-                validation_error = candles.validate_candle_data(
-                    self.session,
-                    self.base_url,
-                    routes,
-                    exchange,
-                    exchange_type,
-                    start_date,
-                    end_date,
+                # Build payload (reuse sync helpers, offloaded to executor)
+                loop = asyncio.get_event_loop()
+                validation_error = await loop.run_in_executor(
+                    None,
+                    lambda: candles.validate_candle_data(
+                        self.session,
+                        self.base_url,
+                        routes,
+                        exchange,
+                        exchange_type,
+                        start_date,
+                        end_date,
+                    ),
                 )
                 if validation_error:
                     return validation_error
