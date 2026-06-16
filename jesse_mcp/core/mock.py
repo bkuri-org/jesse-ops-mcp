@@ -111,6 +111,18 @@ class MockJesseWrapper:
             "execution_time": round(np.random.uniform(0.5, 2.0), 2),
         }
 
+    async def async_backtest(
+        self,
+        strategy_name: str,
+        symbol: str,
+        timeframe: str,
+        start_date: str,
+        end_date: str,
+        **kwargs,
+    ) -> Dict[str, Any]:
+        """Async mock backtest — delegates to sync backtest (mock is instant)."""
+        return self.backtest(strategy_name, symbol, timeframe, start_date, end_date, **kwargs)
+
     def list_strategies(self) -> List[str]:
         """Return list of available mock strategies"""
         return self.mock_strategies.copy()

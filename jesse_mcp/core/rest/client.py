@@ -31,6 +31,12 @@ from . import auth, backtest, candles, config, live, optimization
 
 logger = logging.getLogger("jesse-mcp.rest-client")
 
+
+def _synthesize_equity_curve(trades, starting_balance):
+    """Build equity curve from trade list. Delegates to tools/backtesting impl."""
+    from jesse_mcp.tools.backtesting import _synthesize_equity_curve as _impl
+    return _impl(trades, starting_balance)
+
 JESSE_URL = os.getenv("JESSE_URL", "http://server2:9100")
 JESSE_PASSWORD = os.getenv("JESSE_PASSWORD", "")
 JESSE_API_TOKEN = os.getenv("JESSE_API_TOKEN", "")
@@ -186,10 +192,108 @@ class JesseRESTClient:
                 }
 
             logger.info(f"Backtest completed for {len(routes)} routes")
+
+            # The Jesse REST API returns an empty equity_curve list.
+            # Synthesize it from trades so downstream tools (monte_carlo)
+            # can use it without modification.
+            if result.get("trades") and not result.get("equity_curve"):
+                result["equity_curve"] = _synthesize_equity_curve(
+                    result["trades"], starting_balance
+                )
+
             return result
 
         except Exception as e:
             logger.error(f"Backtest failed: {e}")
+            return {"error": str(e), "success": False}
+
+    async def async_backtest(
+        self,
+        routes: List[Dict[str, str]],
+        start_date: str,
+        end_date: str,
+        exchange: str = "Binance",
+        starting_balance: float = 10000,
+        fee: float = 0.001,
+        leverage: float = 1,
+        exchange_type: str = "futures",
+        data_routes: Optional[List[Dict[str, str]]] = None,
+        hyperparameters: Optional[Dict[str, Any]] = None,
+        include_trades: bool = False,
+        fast_mode: bool = True,
+        benchmark: bool = False,
+        candles_pipeline_class: Optional[str] = None,
+        candles_pipeline_kwargs: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Run a backtest via Jesse REST API using async HTTP (httpx)."""
+        try:
+            import asyncio
+
+            import httpx
+
+            async with httpx.AsyncClient(base_url=self.base_url, timeout=300.0) as client:
+                headers = {}
+                if self.auth_token:
+                    headers["authorization"] = self.auth_token
+
+                # Build payload (reuse sync helpers)
+                validation_error = candles.validate_candle_data(
+                    self.session,
+                    self.base_url,
+                    routes,
+                    exchange,
+                    exchange_type,
+                    start_date,
+                    end_date,
+                )
+                if validation_error:
+                    return validation_error
+
+                payload = backtest.build_backtest_payload(
+                    routes=routes,
+                    start_date=start_date,
+                    end_date=end_date,
+                    exchange=exchange,
+                    starting_balance=starting_balance,
+                    exchange_type=exchange_type,
+                    data_routes=data_routes,
+                    include_trades=include_trades,
+                    fast_mode=fast_mode,
+                    benchmark=benchmark,
+                    candles_pipeline_class=candles_pipeline_class,
+                    candles_pipeline_kwargs=candles_pipeline_kwargs,
+                    hyperparameters=hyperparameters,
+                )
+
+                from jesse_mcp.core.rest.backtest.api import async_execute_backtest
+
+                result = await async_execute_backtest(
+                    client,
+                    self.base_url,
+                    payload,
+                    auth_token=self.auth_token or "",
+                )
+
+                is_valid, message = backtest.validate_backtest_result(result)
+                if not is_valid:
+                    logger.warning(f"Backtest result validation failed: {message}")
+                    return {
+                        "error": f"Invalid backtest result: {message}",
+                        "success": False,
+                        "raw_result": result,
+                    }
+
+                logger.info(f"Async backtest completed for {len(routes)} routes")
+
+                if result.get("trades") and not result.get("equity_curve"):
+                    result["equity_curve"] = _synthesize_equity_curve(
+                        result["trades"], starting_balance
+                    )
+
+                return result
+
+        except Exception as e:
+            logger.error(f"Async backtest failed: {e}")
             return {"error": str(e), "success": False}
 
     def cancel_backtest(self, backtest_id: Optional[str] = None) -> Dict[str, Any]:

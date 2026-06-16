@@ -214,8 +214,13 @@ def register_optimization_tools(mcp):
         step_forward: int = 7,
         param_space: Optional[Dict[str, Any]] = None,
         metric: str = "total_return",
+        max_concurrent_periods: int = 3,
     ) -> Dict[str, Any]:
-        """Perform walk-forward analysis to detect overfitting"""
+        """Perform walk-forward analysis to detect overfitting
+
+        Periods run concurrently (up to max_concurrent_periods) using async
+        HTTP backtests, significantly reducing total execution time.
+        """
         optimizer = require_optimizer()
         result = await optimizer.walk_forward(
             strategy=strategy,
@@ -228,6 +233,7 @@ def register_optimization_tools(mcp):
             step_forward=step_forward,
             param_space=param_space or {},
             metric=metric,
+            max_concurrent_periods=max_concurrent_periods,
         )
         return result
 
