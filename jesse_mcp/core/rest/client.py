@@ -204,8 +204,9 @@ class JesseRESTClient:
             return result
 
         except Exception as e:
-            logger.error(f"Backtest failed: {e}")
-            return {"error": str(e), "success": False}
+            import traceback
+            logger.error(f"Backtest failed: {e}\n{traceback.format_exc()}")
+            return {"error": str(e), "error_type": type(e).__name__, "traceback": traceback.format_exc(), "success": False}
 
     async def async_backtest(
         self,

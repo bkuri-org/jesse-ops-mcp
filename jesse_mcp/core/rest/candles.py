@@ -268,14 +268,15 @@ def import_candles(
             time.sleep(2)
             waited += 2
 
-            status_resp = session.get(
-                f"{base_url}/candles/import/{candle_id}",
+            status_resp = session.post(
+                f"{base_url}/candles/import-status",
+                json={"id": candle_id},
                 timeout=10,
             )
 
             if status_resp.status_code == 200:
                 status_data = status_resp.json()
-                if status_data.get("status") == "completed":
+                if status_data.get("status") == "finished":
                     return {
                         "success": True,
                         "candles_imported": status_data.get("imported_count", 0),

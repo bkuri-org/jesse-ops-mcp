@@ -215,8 +215,9 @@ def get_backtest_session_result(
         return result
 
     except Exception as e:
-        logger.error(f"❌ Failed to get backtest result: {e}")
-        return {"error": str(e), "success": False}
+        import traceback
+        logger.error(f"❌ Failed to get backtest result: {e}\n{traceback.format_exc()}")
+        return {"error": str(e), "error_type": type(e).__name__, "traceback": traceback.format_exc(), "success": False}
 
 
 def cancel_backtest(
