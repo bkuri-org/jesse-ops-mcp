@@ -155,6 +155,7 @@ def load_metadata(strategy_name: str, strategies_path: str) -> Optional[Strategy
 def save_metadata(metadata: StrategyMetadata, strategies_path: str) -> bool:
     path = get_metadata_path(metadata.name, strategies_path)
     try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "w") as f:
             json.dump(metadata.to_dict(), f, indent=2)
         return True
@@ -463,10 +464,11 @@ class StrategyValidator:
         if spec and results["passed"]:
             dry_run_result = self.dry_run_backtest(code, spec)
             results["levels"][ValidationLevel.DRY_RUN.value] = dry_run_result.to_dict()
+            if not dry_run_result.passed:
+                results["passed"] = False
             if dry_run_result.warnings:
                 for w in dry_run_result.warnings:
-                    results["warnings"].append({ValidationLevel.DRY_RUN.value: w})
-        logger.info(f"Validation: {'✅ PASSED' if results['passed'] else '❌ FAILED'}")
+                    results["warnings"].append({"level": ValidationLevel.DRY_RUN.value, "warning": w})
         return results
 
 

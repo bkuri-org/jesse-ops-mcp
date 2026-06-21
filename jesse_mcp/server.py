@@ -195,7 +195,19 @@ def _register_all_tools():
 
         register_ml_tools(mcp)
         logger.info("✅ ML tools registered")
+    finally:
+        mcp.tool = _original_tool
 
+    # Register agent tools (optional — may fail without all dependencies)
+    _orig_agent = mcp.tool
+
+    def _agent_no_schema(*args, **kwargs):
+        if "output_schema" not in kwargs:
+            kwargs["output_schema"] = None
+        return _orig_agent(*args, **kwargs)
+
+    mcp.tool = _agent_no_schema
+    try:
         from jesse_mcp.agent_tools import register_agent_tools
 
         register_agent_tools(mcp)
@@ -203,7 +215,7 @@ def _register_all_tools():
     except Exception as e:
         logger.warning(f"⚠️  Agent tools registration failed: {e}")
     finally:
-        mcp.tool = _original_tool
+        mcp.tool = _orig_agent
 
 
 # ==================== MAIN ENTRY POINT ====================
