@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from typing import Dict, Any, List, Optional, Tuple, Callable, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from jesse_mcp.core.strategy_validator import StrategyValidator
+    from jesse_mcp.core.strategy_validation import StrategyValidator
 
 logger = logging.getLogger("jesse-mcp.strategy_builder")
 
@@ -787,7 +787,7 @@ Improve the strategy:"""
 def get_strategy_builder(validator: Optional["StrategyValidator"] = None) -> StrategyBuilder:
     """Factory function to get StrategyBuilder instance."""
     if validator is None:
-        from jesse_mcp.core.strategy_validator import get_validator
+        from jesse_mcp.core.strategy_validation import get_validator
 
         validator = get_validator()
 

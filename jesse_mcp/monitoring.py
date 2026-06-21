@@ -87,7 +87,7 @@ class MarketMonitor:
     def _get_jesse_client(self):
         """Lazy load Jesse client"""
         if self._jesse_client is None:
-            from jesse_mcp.core.jesse_rest_client import get_jesse_rest_client
+            from jesse_mcp.core.rest import get_jesse_rest_client
 
             self._jesse_client = get_jesse_rest_client()
         return self._jesse_client

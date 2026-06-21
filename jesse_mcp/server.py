@@ -115,7 +115,7 @@ def _initialize_dependencies():
 
 # ==================== FASTMCP INITIALIZATION ====================
 
-mcp = FastMCP("jesse-ops-mcp", version="2.1.0")
+mcp = FastMCP("jesse-ops-mcp", version="2.1.1")
 
 
 @mcp.custom_route("/health", methods=["GET"])
@@ -125,7 +125,7 @@ async def health_endpoint(request: Request) -> JSONResponse:
 
     Returns MCP server status, Jesse connection status, and timestamp.
     """
-    from jesse_mcp.core.jesse_rest_client import get_jesse_rest_client
+    from jesse_mcp.core.rest import get_jesse_rest_client
 
     jesse_status: Dict[str, Any] = {"connected": False, "error": None}
     try:
@@ -198,6 +198,25 @@ def _register_all_tools():
     finally:
         mcp.tool = _original_tool
 
+    # Register agent tools (optional — may fail without all dependencies)
+    _orig_agent = mcp.tool
+
+    def _agent_no_schema(*args, **kwargs):
+        if "output_schema" not in kwargs:
+            kwargs["output_schema"] = None
+        return _orig_agent(*args, **kwargs)
+
+    mcp.tool = _agent_no_schema
+    try:
+        from jesse_mcp.agent_tools import register_agent_tools
+
+        register_agent_tools(mcp)
+        logger.info("✅ Agent tools registered")
+    except Exception as e:
+        logger.warning(f"⚠️  Agent tools registration failed: {e}")
+    finally:
+        mcp.tool = _orig_agent
+
 
 # ==================== MAIN ENTRY POINT ====================
 
@@ -208,25 +227,6 @@ def main():
 
     _initialize_dependencies()
     _register_all_tools()
-
-    # Re-apply the output_schema=None patch for agent tools
-    _orig = mcp.tool
-
-    def _tool_no_schema(*args, **kwargs):
-        if "output_schema" not in kwargs:
-            kwargs["output_schema"] = None
-        return _orig(*args, **kwargs)
-
-    mcp.tool = _tool_no_schema
-    try:
-        from jesse_mcp.agent_tools import register_agent_tools
-
-        register_agent_tools(mcp)
-        logger.info("✅ Agent tools registered")
-    except Exception as e:
-        logger.warning(f"⚠️  Agent tools registration failed: {e}")
-    finally:
-        mcp.tool = _orig
 
     parser = argparse.ArgumentParser(description="Jesse MCP Server - Quantitative Trading Analysis")
     parser.add_argument(

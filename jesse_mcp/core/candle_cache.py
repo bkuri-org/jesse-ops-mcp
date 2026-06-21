@@ -274,7 +274,7 @@ def warm_cache_from_jesse(exchange: str, symbol: str, timeframe: str = "1h"):
     Warm up cache by loading candles from Jesse
     Call this on startup or before intensive backtesting
     """
-    from jesse_mcp.core.jesse_rest_client import get_jesse_rest_client
+    from jesse_mcp.core.rest import get_jesse_rest_client
 
     client = get_jesse_rest_client()
     cache = get_candle_cache()

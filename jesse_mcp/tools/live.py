@@ -69,7 +69,7 @@ def register_live_tools(mcp):
             Dict with session_id and status, or error details
         """
         from jesse_mcp.core.live_config import PAPER_TRADING_INFO
-        from jesse_mcp.core.strategy_validation.certification import (
+        from jesse_mcp.core.strategy_validation import (
             get_strategy_certification,
             CERTIFICATION_MIN_TESTS,
             CERTIFICATION_PASS_RATE,
@@ -181,7 +181,7 @@ def register_live_tools(mcp):
         require_jesse()
         strategies_path = get_strategies_path()
 
-        from jesse_mcp.core.strategy_validation.certification import (
+        from jesse_mcp.core.strategy_validation import (
             check_live_trading_allowed,
             CERTIFICATION_MIN_TESTS,
             CERTIFICATION_PASS_RATE,

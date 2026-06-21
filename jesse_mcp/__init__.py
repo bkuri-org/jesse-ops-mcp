@@ -9,7 +9,7 @@ Requires Jesse v2.1.4+ with its built-in MCP server for strategy development
 (backtest CRUD, candle import, strategy read/write, config, indicators).
 """
 
-__version__ = "2.0.0"
+__version__ = "2.1.1"
 __author__ = "Bernardo Kuri"
 __all__ = ["main"]
 

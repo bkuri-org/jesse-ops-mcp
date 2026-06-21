@@ -34,7 +34,7 @@ def initialize(
 
 def get_client():
     """Get Jesse REST client instance."""
-    from jesse_mcp.core.jesse_rest_client import get_jesse_rest_client
+    from jesse_mcp.core.rest import get_jesse_rest_client
 
     return get_jesse_rest_client()
 
