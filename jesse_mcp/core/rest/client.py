@@ -198,7 +198,7 @@ class JesseRESTClient:
             # can use it without modification.
             if result.get("trades") and not result.get("equity_curve"):
                 result["equity_curve"] = _synthesize_equity_curve(
-                    result["trades"], starting_balance
+                    result, starting_balance
                 )
 
             return result
@@ -292,7 +292,7 @@ class JesseRESTClient:
 
                 if result.get("trades") and not result.get("equity_curve"):
                     result["equity_curve"] = _synthesize_equity_curve(
-                        result["trades"], starting_balance
+                        result, starting_balance
                     )
 
                 return result
@@ -677,13 +677,14 @@ class JesseRESTClient:
                 waited += 2
 
                 try:
-                    status_resp = self.session.get(
-                        f"{self.base_url}/candles/import/{candle_id}",
+                    status_resp = self.session.post(
+                        f"{self.base_url}/candles/import-status",
+                        json={"id": candle_id},
                         timeout=10,
                     )
                     if status_resp.status_code == 200:
                         status_data = status_resp.json()
-                        if status_data.get("status") == "completed":
+                        if status_data.get("status") == "finished":
                             logger.info(
                                 f"Candle import completed for {exchange} {symbol}"
                             )
