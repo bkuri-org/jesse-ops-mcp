@@ -178,7 +178,7 @@ def _cache_warm(symbol: str, exchange: str, timeframe: str) -> int:
 def _cache_warm_all(exchange: str, timeframe: str) -> int:
     """Warm cache for all symbols with existing candles"""
     try:
-        from jesse_mcp.core.jesse_rest_client import get_jesse_rest_client
+        from jesse_mcp.core.rest import get_jesse_rest_client
         from jesse_mcp.core.candle_cache import get_candle_cache, warm_cache_from_jesse
 
         client = get_jesse_rest_client()

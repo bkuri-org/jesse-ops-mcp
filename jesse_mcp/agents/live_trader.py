@@ -20,7 +20,7 @@ from jesse_mcp.core.live_config import (
     LIVE_TRADING_WARNING,
     PAPER_TRADING_INFO,
 )
-from jesse_mcp.core.jesse_rest_client import get_jesse_rest_client
+from jesse_mcp.core.rest import get_jesse_rest_client
 
 logger = logging.getLogger("jesse-mcp.trading-agent")
 

@@ -9,7 +9,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-from jesse_mcp.core.strategy_validation.metadata import (
+from jesse_mcp.core.strategy_validation import (
     get_or_create_metadata,
     save_metadata,
 )
@@ -38,7 +38,7 @@ def _strategy_create_impl(
     """
     from jesse_mcp.core.job_manager import JobStatus, get_job_manager
     from jesse_mcp.core.strategy_builder import StrategySpec, get_strategy_builder
-    from jesse_mcp.core.strategy_validator import get_validator
+    from jesse_mcp.core.strategy_validation import get_validator
     import os
 
     try:
