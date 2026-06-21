@@ -158,11 +158,14 @@ def register_backtesting_tools(mcp):
 
         if result.get("error") or not result.get("success", True):
             logger.error(f"Backtest failed: {result.get('error', 'Unknown error')}")
-            return {
+            failure = {
                 "error": result.get("error", "Backtest failed"),
                 "error_type": result.get("error_type", "BacktestError"),
                 "success": False,
             }
+            if result.get("traceback"):
+                failure["traceback"] = result["traceback"]
+            return failure
 
         # Synthesize equity curve from trades if requested. Jesse's REST API
         # does not propagate the `generate_equity_curve` flag, so we compute
