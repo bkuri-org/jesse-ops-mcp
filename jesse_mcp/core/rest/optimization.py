@@ -231,7 +231,14 @@ def get_optimization_session(
             timeout=30,
         )
         response.raise_for_status()
-        return response.json()
+        result = response.json()
+        # Belt-and-suspenders: some Jesse REST endpoints return a list
+        # instead of a single session dict. Wrap it in a uniform shape
+        # so callers can always rely on dict access. Companion guard
+        # already exists in rate_limited_optimization().
+        if isinstance(result, list):
+            return {"sessions": result, "success": True}
+        return result
     except Exception as e:
         logger.error(f"Failed to get optimization session: {e}")
         return {"error": str(e), "success": False}
@@ -250,7 +257,12 @@ def get_monte_carlo_sessions(
             timeout=30,
         )
         response.raise_for_status()
-        return response.json()
+        result = response.json()
+        # Belt-and-suspenders: an unwrapped list response would crash
+        # downstream `result.get(...)` calls. Normalize to a dict.
+        if isinstance(result, list):
+            return {"sessions": result, "success": True}
+        return result
     except Exception as e:
         logger.error(f"Failed to get Monte Carlo sessions: {e}")
         return {"error": str(e), "sessions": []}
